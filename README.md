@@ -1,29 +1,55 @@
-# LEX · Independent Translation Engine
+# Lexis · Independent Translation Engine
 
-**LEX** (del griego *Léxis*: palabra / del latín *Lex*: ley) es un sistema
-de traducción agnóstico, minimalista y ligero, diseñado bajo la filosofía
-**Unix**.
+> *"Lex una, linguae multae."*
+> *One law, many languages.*
 
-Permite separar las cadenas de texto del código fuente, facilitando
-aplicaciones multilingües en cualquier lenguaje de programación
-(Bash, Python, C, Lua, etc.).
+**Lexis** (from the Greek *Léxis*: word / from the Latin *Lex*: law) is an agnostic, minimalist and lightweight translation system designed under the **Unix** philosophy.
+
+It separates human text from source code using a lightweight `.lex` format based on `key::value` entries and printf-style placeholders.
+
+Designed to work everywhere:
+
+| Runtime | Status     |
+| ------- | ---------- |
+| Python  | ✅ stable  |
+| Bash    | ✅ stable  |
+| C       | 🔜 planned |
+| Lua     | 🔜 planned |
+| JS      | 🔜 planned |
 
 ---
 
-## Filosofía
+## Philosophy
 
-| Principio       | Descripción                                               |
-|-----------------|-----------------------------------------------------------|
-| **Minimalismo** | Sin dependencias, sin formatos pesados (JSON/YAML).       |
-| **Kaizen**      | Mejora continua a través de la simplicidad.               |
-| **Universalidad**| Un solo formato para múltiples lenguajes de programación.|
+Lexis follows a small and strict philosophy:
+
+| Principle           | Description                                   |
+| ------------------- | --------------------------------------------- |
+| **Minimalism**      | No JSON, YAML, XML or complex parsing         |
+| **Portability**     | Same format across all languages              |
+| **Predictability**  | Flat structure, deterministic behavior        |
+| **Unix Philosophy** | Small format, simple rules                    |
+| **Performance**     | Fast parsing with lightweight implementations |
+
+Lexis intentionally avoids complexity.
+
+No nesting.
+No logic.
+No imports.
+No namespaces.
+No magic.
 
 ---
 
-## El Formato `.lex`
+## The `.lex` Format
 
-El archivo utiliza un separador de doble punto (`::`) para definir las
-traducciones. Es crudo, rápido y eficiente.
+Lexis uses a simple separator:
+
+```text
+key::value
+```
+
+Example:
 
 ```
 # lang/es.lex
@@ -33,91 +59,216 @@ modules_available_list::Lista de Módulos Disponibles
 error_file::No se encontró el archivo: %s
 ```
 
-### Reglas
+## Features
 
-- La **clave** termina en el primer `::` encontrado.
-- El **valor** es todo lo que viene después, incluyendo `::` adicionales.
-- Las líneas que comienzan con `#` son comentarios.
-- Las líneas vacías son ignoradas.
-- Los placeholders `%s` permiten valores dinámicos.
-
-### Convenciones de claves (recomendadas)
-
-- `snake_case` para todas las claves independiente del lenguaje.
-- Ejemplo: `error_file`, `modules_available`, `welcome`
+* UTF-8 support
+* printf-style placeholders
+* escape sequences
+* automatic locale detection
+* fallback locale support
+* lazy runtime caching
+* runtime agnostic
+* zero external dependencies
 
 ---
 
-## Estructura del Proyecto
+## Placeholders
 
+Lexis uses printf-style placeholders.
+
+| Placeholder | Type                 |
+| ----------- | -------------------- |
+| `%s`        | String               |
+| `%d`        | Integer              |
+| `%f`        | Float                |
+| `%x`        | Hexadecimal          |
+| `%o`        | Octal                |
+| `%c`        | Character            |
+| `%%`        | Literal percent sign |
+
+Example:
+
+```text
+welcome::Welcome %s
+progress::Progress: %d%%
 ```
+
+---
+
+## Escapes
+
+Lexis supports lightweight escape sequences inside values.
+
+| Sequence | Result          |
+| -------- | --------------- |
+| `\n`     | Newline         |
+| `\t`     | Tab             |
+| `\\`     | Backslash       |
+| `\"`     | Double quote    |
+| `\r`     | Carriage return |
+| `\b`     | Backspace       |
+| `\v`     | Vertical tab    |
+
+Unknown escape sequences remain unchanged.
+
+Example:
+
+```text
+multiline::Line 1\nLine 2
+
+path::C:\\Program Files\\Lexis
+
+quote::\"Lex una, linguae multae.\"
+```
+
+---
+
+## Example Usage
+
+### Translation File
+
+```text
+# lang/en.lex
+
+welcome::Welcome %s
+modules_available::Modules Available
+error_file::File not found: %s
+progress::Progress: %d%%
+```
+---
+
+## Generic Runtime Usage
+
+Load the `.lex` file using any compatible Lexis runtime.
+
+```text
+get("welcome", "Lexis")
+→ Welcome Lexis
+```
+
+```text
+get("modules_available")
+→ Modules Available
+```
+
+```text
+get("error_file", "config.txt")
+→ File not found: config.txt
+```
+
+```text
+get("progress", 80)
+→ Progress: 80%
+```
+
+### Locale Detection
+
+Lexis automatically detects the system locale from `$LANG`.
+
+```text
+$LANG=es_ES.UTF-8
+→ loads es.lex
+```
+
+If the locale file does not exist, it falls back to en.lex by default (this behavior can be customized in the runtime configuration).
+
+---
+
+## Runtime Behavior
+
+Lexis runtimes follow a strongly recommended hybrid loading strategy:
+
+| Phase  | Strategy                           |
+| ------ | ---------------------------------- |
+| Load   | Eager parsing and validation       |
+| Access | Lazy escape processing and caching |
+
+This ensures:
+
+* malformed files fail immediately
+* duplicate keys are detected on load
+* runtime lookups remain fast
+
+---
+
+## Project Structure
+
+```text
 lexis/
+├── docs/
+│   ├── LEX_FORMAT_SPEC.md
+│   └── RUNTIME_TEMPLATE.md
+│
 ├── lang/
 │   ├── en.lex
 │   └── es.lex
-├── python/
-│   └── main.py
-└── bash/
-    └── main.sh
+│
+├── runtimes/
+│   ├── python/
+│   │   └── lexis.py
+│   │
+│   └── bash/
+│       └── lexis.sh
+│
+├── tests/
+│   └── test.lex
+│
+└── README.md
 ```
 
 ---
 
-## Uso en Python
+## Specification
 
-```python
-from main import LEX, LexFileNotFoundError, LexKeyNotFoundError
+Official documents:
 
-try:
-    lex = LEX("lang")
-    print(lex.get("welcome", "LEX"))         # Bienvenido a LEX
-    print(lex.get("modules_available"))      # Módulos Disponibles
-    print(lex.get("error_file", "foo.txt"))  # No se encontró el archivo: foo.txt
-
-    lex.reload("en")
-    print(lex.get("welcome", "LEX"))         # Welcome to LEX
-
-except LexFileNotFoundError as error:
-    print(f"[ERROR] {error}")
-except LexKeyNotFoundError as error:
-    print(f"[ERROR] {error}")
-```
-
-## Uso en Bash
-
-```bash
-source main.sh
-
-lex_load "lang"
-lex_get "welcome" "LEX"         # Bienvenido a LEX
-lex_get "modules_available"     # Módulos Disponibles
-lex_get "error_file" "foo.txt"  # No se encontró el archivo: foo.txt
-
-lex_reload "lang" "en"
-lex_get "welcome" "LEX"         # Welcome to LEX
-```
+| Document                  | Description                          |
+| ------------------------- | ------------------------------------ |
+| `LEX_FORMAT_SPEC.md`      | Official `.lex` format specification |
+| `RUNTIME_TEMPLATE.md`     | Runtime implementation guidelines    |
 
 ---
 
-## Detección Automática de Locale
+## What Lexis Is Not
 
-LEX detecta automáticamente el idioma del sistema via la variable
-de entorno `$LANG`. Si no existe un archivo `.lex` para el locale
-detectado, hace fallback a `en.lex`.
+Lexis deliberately excludes:
 
-```
-$LANG=es_ES.UTF-8  →  carga lang/es.lex
-$LANG=fr_FR.UTF-8  →  carga lang/fr.lex  (si no existe → fallback a en.lex)
-```
+* nesting
+* imports
+* multiline blocks
+* logic
+* conditionals
+* pluralization systems
+* namespaces
+* heavy serialization formats
 
----
-
-## Cache
-
-LEX utiliza un sistema de cache lazy: solo carga en memoria las claves
-que se solicitan. Esto lo hace eficiente incluso con archivos `.lex` de
-miles de líneas.
+Use `\n` for multiline text.
 
 ---
 
-*LEX — Una ley, muchos lenguajes.*
+## Versioning
+
+| Version | Meaning                       |
+| ------- | ----------------------------- |
+| `0.x`   | Development                   |
+| `1.0`   | Stable core specification     |
+| `1.x`   | Backward-compatible additions |
+
+---
+
+## Goal
+
+Lexis is designed to remain understandable without external tooling or complex parsing logic.
+
+The format is the law.
+The implementation is free.
+
+---
+
+## License
+
+MIT License
+
+---
+
+*Lexis — Una ley, muchos lenguajes.*
