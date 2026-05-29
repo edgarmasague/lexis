@@ -197,23 +197,39 @@ This ensures:
 lexis/
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
-│   └── RUNTIME_TEMPLATE.md
+│   ├── RUNTIME_TEMPLATE.md
+│   ├── bash.md
+│   └── python.md
 │
 ├── lang/
 │   ├── en.lex
 │   └── es.lex
 │
 ├── runtimes/
-│   ├── python/
-│   │   └── lexis.py
-│   │
-│   └── bash/
-│       └── lexis.sh
+│   ├── bash/
+│   │   └── lexis.sh
+│   └── python/
+│       └── lexis.py
 │
 ├── tests/
-│   └── test.lex
+│   ├── README.md
+│   ├── TESTS.md
+│   ├── fixtures/
+│   │   ├── test.lex
+│   │   ├── en.lex
+│   │   ├── es.lex
+│   │   ├── empty.lex
+│   │   ├── duplicate_key.lex
+│   │   ├── malformed_line.lex
+│   │   └── empty_key.lex
+│   └── runtimes/
+│       └── python/
+│           └── test.py
 │
-└── README.md
+├── README.md
+├── WORKFLOW.md
+├── CHANGELOG.md
+└── CONTRIBUTING.md
 ```
 
 ---
@@ -271,4 +287,4 @@ MIT License
 
 ---
 
-*Lexis — Una ley, muchos lenguajes.*
+*Lex una, linguae multae.*
