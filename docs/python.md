@@ -29,24 +29,26 @@ The Python runtime uses an **eager + lazy** model:
 
 ## API
 
-### `LEX(lang_dir, locale=None)`
+### `LEX(lang_dir, locale=None, fallback_locale="en")`
 
 Initializes the runtime. Auto-detects locale from `$LANG`. Falls back to the default locale file if the requested one does not exist.
 
 ```python
-lex = LEX("lang")          # detects $LANG automatically
-lex = LEX("lang", "fr")    # forces locale (falls back if not found)
+lex = LEX("lang")                               # detects $LANG automatically
+lex = LEX("lang", "fr")                         # forces locale (falls back if not found)
+lex = LEX("lang", "fr", fallback_locale="pt")  # custom fallback
 ```
 
 ---
 
-### `lex.load(lang_dir, locale=None)`
+### `lex.load(lang_dir, locale=None, fallback_locale="en")`
 
 Loads a `.lex` file from a new directory, optionally with a new locale.  
 Useful when embedding Lexis in projects with multiple translation directories.
 
 ```python
 lex.load("other/lang", "fr")
+lex.load("other/lang", "fr", fallback_locale="pt")
 ```
 
 ---
@@ -55,6 +57,7 @@ lex.load("other/lang", "fr")
 
 Returns the translation with `printf`-style substitution.  
 Processes escape sequences on first access and caches the result.
+Raises `LexKeyNotFoundError` if the key doesn't exist or if placeholder formatting fails (e.g., wrong number or type of arguments)
 
 ```python
 lex.get("welcome", "Alice", 3)      # → "Welcome Alice to Lexis!"
@@ -77,14 +80,16 @@ lex.get_or_default("missing", "Hello %s", "Bob")  # → "Hello Bob"
 
 ---
 
-### `lex.reload(locale=None)`
+### `lex.reload(locale=None, fallback_locale=None)`
 
 Reloads translations from the same directory, optionally switching locale.  
 **Restores previous state if the reload fails.**
 
 ```python
-lex.reload()        # reloads current locale
-lex.reload("en")    # switches to en.lex and reloads
+lex.reload()                     # reloads current locale
+lex.reload("en")                 # switches to en.lex and reloads
+lex.reload("en", "pt")           # switches locale and fallback
+lex.reload(fallback_locale="pt") # keeps locale, changes fallback
 ```
 
 ---
@@ -133,11 +138,11 @@ repr(lex)
 
 ## Exceptions
 
-| Exception | When raised |
-|---|---|
-| `LexFileNotFoundError` | The `.lex` file does not exist or cannot be read |
-| `LexKeyNotFoundError` | The key does not exist or placeholder formatting fails |
-| `LexParseError` | The file contains malformed lines or duplicate keys |
+| Exception              | When raised                                            |
+|------------------------|--------------------------------------------------------|
+| `LexFileNotFoundError` | The `.lex` file does not exist or cannot be read       |
+| `LexKeyNotFoundError`  | The key does not exist or placeholder formatting fails |
+| `LexParseError`        | The file contains malformed lines or duplicate keys    |
 
 ```python
 try:
@@ -160,11 +165,14 @@ except LexParseError as error:
 # $LANG=es_ES.UTF-8 → loads lang/es.lex
 lex = LEX("lang")
 
-# $LANG=fr_FR.UTF-8, lang/fr.lex not found → falls back to default locale
+# $LANG=fr_FR.UTF-8, lang/fr.lex not found → falls back to "en" (default)
 lex = LEX("lang")
 
-# $LANG=C or empty → falls back to default locale
+# $LANG=C or empty → falls back to "en" (default)
 lex = LEX("lang")
+
+# $LANG=fr_FR.UTF-8, lang/fr.lex not found → falls back to "pt" (custom)
+lex = LEX("lang", fallback_locale="pt")
 
 # Force explicit locale
 lex = LEX("lang", "en")

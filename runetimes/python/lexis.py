@@ -31,23 +31,29 @@ class LEX:
 
     # Official escape sequences
     _ESCAPE_SEQUENCES = {
-        '\\\\': '\\',
-        '\\n': '\n',
-        '\\t': '\t',
-        '\\r': '\r',
-        '\\b': '\b',
-        '\\v': '\v',
-        '\\"': '"',
+        r'\\': '\\',
+        r'\n': '\n',
+        r'\t': '\t',
+        r'\r': '\r',
+        r'\b': '\b',
+        r'\v': '\v',
+        r'\"': '"',
     }
 
-    def __init__(self, lang_dir: str, locale: str = None):
+    def __init__(
+            self, lang_dir: str,
+            locale: str = None,
+            fallback_locale: str = "en"
+    ):
         """
         Initialize Lexis with a language directory and optional locale.
         Args:
             lang_dir: Directory containing .lex files.
             locale: Locale code. Auto-detected if None.
+            fallback_locale: Fallback locale code. Default is "en".
         """
         self.lang_dir = lang_dir
+        self.fallback_locale = fallback_locale
         self.locale = locale or self._detect_locale()
         self._raw_translations: dict[str, str] = {}
         self._cache_translations: dict[str, str] = {}
@@ -72,6 +78,7 @@ class LEX:
     def _resolve_filepath(self) -> str:
         """
         Resolve the .lex file path with fallback to en.lex.
+        If fallback is used, updates locale state to match fallback.
         Returns:
             Absolute path to the .lex file.
         Raises:
@@ -82,13 +89,17 @@ class LEX:
         if os.path.isfile(filepath):
             return filepath
         # Fallback to English if locale file missing
-        fallback = os.path.join(self.lang_dir, "en.lex")
+        fallback = os.path.join(
+            self.lang_dir,
+            f"{self.fallback_locale}.lex"
+        )
         if os.path.isfile(fallback):
-            self.locale = "en"
+            self.locale = self.fallback_locale
             return fallback
         raise LexFileNotFoundError(
             f"No .lex file found for locale "
-            f"'{self.locale}' in '{self.lang_dir}'"
+            f"'{self.locale}' (fallback '{self.fallback_locale}') "
+            f"in '{self.lang_dir}'"
         )
 
     def _unescape(self, value: str) -> str:
@@ -114,7 +125,9 @@ class LEX:
         return "".join(result)
 
     def _parse_line(
-            self, raw_line: str, line_num: int
+            self,
+            raw_line: str,
+            line_num: int
     ) -> tuple[str, str] | None:
         """
         Parse a single line from .lex file.
@@ -127,7 +140,7 @@ class LEX:
             LexParseError:
                 On malformed lines or duplicates.
         """
-        line = raw_line.rstrip("\n")
+        line = raw_line.rstrip("\r\n")
         # Skip empty lines or comments
         if not line.strip() or line.lstrip().startswith("#"):
             return None
@@ -182,7 +195,7 @@ class LEX:
         Args:
             key: Translation key.
         Returns:
-            Raw value string.
+            Unescaped (processed) value string
         Raises:
             LexKeyNotFoundError:
                 If key not found.
@@ -197,15 +210,22 @@ class LEX:
             )
         return self._cache_translations[key]
 
-    def load(self, lang_dir: str, locale: str = None) -> None:
+    def load(
+            self,
+            lang_dir: str,
+            locale: str = None,
+            fallback_locale: str = "en"
+    ) -> None:
         """
         Load .lex file from given directory.
         Alias for re-initializing a new lang_dir and locale.
         Args:
             lang_dir: Directory containing .lex files.
             locale: Locale code. Auto-detected if None.
+            fallback_locale: Fallback locale code. Default is "en".
         """
         self.lang_dir = lang_dir
+        self.fallback_locale = fallback_locale
         self.locale = locale or self._detect_locale()
         self.filepath = self._resolve_filepath()
         self._load_file()
@@ -252,25 +272,41 @@ class LEX:
             except TypeError:
                 return default
 
-    def reload(self, locale: str = None) -> None:
+    def reload(
+            self,
+            locale: str = None,
+            fallback_locale: str = None
+    ) -> None:
         """
         Reload translations with a new or auto-detected locale.
         Args:
             locale: New locale code. Auto-detected if None.
+            fallback_locale: New fallback locale code,
+                or None to keep previous.
         """
         new_locale = locale or self._detect_locale()
+        new_fallback = (
+            fallback_locale
+            if fallback_locale is not None
+            else self.fallback_locale
+        )
         # Save current state for rollback on failure
+        old_lang_dir = self.lang_dir
         old_locale = self.locale
+        old_fallback = self.fallback_locale
         old_filepath = self.filepath
         old_raw_translations = self._raw_translations.copy()
         old_cache_translations = self._cache_translations.copy()
         try:
             self.locale = new_locale
+            self.fallback_locale = new_fallback
             self.filepath = self._resolve_filepath()
             self._load_file()
         except (LexFileNotFoundError, LexParseError):
             # Restore previous state if anything fails
+            self.lang_dir = old_lang_dir
             self.locale = old_locale
+            self.fallback_locale = old_fallback
             self.filepath = old_filepath
             self._raw_translations = old_raw_translations
             self._cache_translations = old_cache_translations
@@ -288,6 +324,7 @@ class LEX:
         # String representation for debugging
         return (
             f"Lexis(locale={self.locale!r}, "
+            f"fallback={self.fallback_locale!r}, "
             f"keys={len(self._raw_translations)}, "
             f"cached keys={len(self._cache_translations)}, "
             f"filepath={self.filepath!r})"
