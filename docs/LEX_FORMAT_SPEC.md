@@ -1,4 +1,4 @@
-# Lexis Format Specification v1.0.0
+# Lexis Format Specification v1.0
 
 A flat translation format based on printf-style placeholders.
 Portable across languages. Designed to stay simple.
@@ -22,6 +22,11 @@ Portable across languages. Designed to stay simple.
 * No BOM
 * LF line endings preferred
 * CRLF tolerated
+
+## Naming
+
+Lexis files are named `{locale}.lex` (e.g., `en.lex`, `es.lex`) and loaded from a language directory.
+Fallback behavior is runtime-defined.
 
 ---
 
@@ -157,13 +162,13 @@ The following escape sequences are officially supported:
 
 | Sequence | Result            |
 | -------- | ----------------- |
-| `\\n`    | Newline (LF)      |
-| `\\t`    | Horizontal tab    |
-| `\\\\`   | Literal backslash |
-| `\\"`    | Double quote      |
-| `\\r`    | Carriage return   |
-| `\\b`    | Backspace         |
-| `\\v`    | Vertical tab      |
+| `\n`     | Newline (LF)      |
+| `\t`     | Horizontal tab    |
+| `\\`     | Literal backslash |
+| `\"`     | Double quote      |
+| `\r`     | Carriage return   |
+| `\b`     | Backspace         |
+| `\v`     | Vertical tab      |
 
 ---
 
@@ -227,6 +232,7 @@ All runtimes MUST support the following placeholders:
 
 * Escape sequences MUST be processed before placeholder substitution
 * `%%` MUST become a literal `%`
+* `%%` does NOT count as a placeholder for argument matching
 * Placeholder substitution occurs at runtime
 * Placeholder order is positional
 
@@ -234,6 +240,7 @@ Example:
 
 ```text
 welcome::Welcome %s
+progress::Progress: %d%%
 ```
 
 ---
@@ -308,7 +315,7 @@ Use `\n` for multiline text.
 The official test file is:
 
 ```text
-tests/test.lex
+tests/fixtures/test.lex
 ```
 
 All compliant parsers MUST produce identical key-value outputs for all entries in that file.
