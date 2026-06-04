@@ -161,6 +161,11 @@ get("progress", 80)
 → Progress: 80%
 ```
 
+```text
+get_or_default("missing", "N/A")
+→ N/A
+```
+
 ### Locale Detection
 
 Lexis automatically detects the system locale from `$LANG`.

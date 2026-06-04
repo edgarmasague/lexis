@@ -131,7 +131,7 @@ Shows the current runtime state including total keys and cached keys.
 
 ```python
 repr(lex)
-# Lexis(locale='en', keys=42, cached keys=3, filepath='lang/en.lex')
+# Lexis(locale='en', fallback='en', keys=42, cached keys=3, filepath='lang/en.lex')
 ```
 
 ---

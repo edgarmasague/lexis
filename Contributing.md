@@ -129,16 +129,7 @@ Once implemented:
  
 All runtimes must pass the official test suite located in `tests/fixtures/`.  
 See `tests/TESTS.md` for the full list of cases and expected outputs.
- 
 
-
----
-
-## Conformance
- 
-All runtimes must pass the official test suite located in `tests/fixtures/`.  
-See `tests/TESTS.md` for the full list of cases and expected outputs.
- 
 ---
  
 ## Code Style

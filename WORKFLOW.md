@@ -75,7 +75,7 @@ Recommended flow when adding a new key:
 Load the `.lex` file using any compatible Lexis runtime and use the standard API:
  
 ```text
-load("lang", "es")               # load locale
+load("lang", "es", "pt")               # load locale
  
 get("welcome", "Alice")          # → Bienvenido a Alice
 get("error_file", "data.csv")    # → Archivo no encontrado: data.csv
