@@ -1,12 +1,14 @@
 # test.py - Official Test Suite for LEXIS
 # Based on TESTS.md
 
-import os
+import os, sys
 import pytest
+# Add runtimes/python to path so lexis.py can be imported
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "runtimes", "python"))
 from lexis import LEX, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
 
 # Path to test fixtures directory
-FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "fixtures")
 
 
 @pytest.fixture
@@ -143,10 +145,12 @@ class TestEdgeCase:
         ) == "key::value with double colon in value"
 
     def test_t040_triple_colon(self, lex):
-        assert lex.get("triple_colon") == "key:::value with triple colon"
+        assert lex.get(
+            "triple_colon"
+        ) == "key:::value with triple colon"
 
 
-# Conformance Tests T-041 to T-051
+# Conformance Tests T-041 to T-052
 class TestConformance:
     def test_t041_missing_key_raises(self, lex):
         with pytest.raises(LexKeyNotFoundError):
@@ -159,34 +163,75 @@ class TestConformance:
         result = lex.get_or_default("nonexistent_key", "Hello %s", "Alice")
         assert result == "Hello Alice"
 
-    def test_t044_locale_fallback(self, tmp_path):
-        # Create only en.lex, request fr
+    def test_t044a_locale_fallback_default(self, tmp_path):
+        # Request fr, only en.lex exists, default fallback
         en_lex = tmp_path / "en.lex"
-        en_lex.write_text("welcome::Welcome\n", encoding="utf-8")
+        en_lex.write_text("welcome::Welcome", encoding="utf-8")
         lex = LEX(str(tmp_path), "fr")
         assert lex.locale == "en"
         assert lex.get("welcome") == "Welcome"
 
-    def test_t045_reload_switches_locale(self, lex_es):
+    def test_t044b_locale_fallback_custom(self, tmp_path):
+        # Request fr, fallback to pt where only pt.lex exists
+        pt_lex = tmp_path / "pt.lex"
+        pt_lex.write_text("welcome::Bem-vindo\n", encoding="utf-8")
+        lex = LEX(str(tmp_path), "fr", fallback_locale="pt")
+        assert lex.locale == "pt"
+        assert lex.get("welcome") == "Bem-vindo"
+
+    def test_t045a_reload_switches_locale(self, lex_es):
+        # Verify reload changes locale and loads different translations
         assert lex_es.get("welcome", "Alice") == "Bienvenido Alice"
         lex_es.reload("en")
         assert lex_es.get("welcome", "Alice") == "Welcome Alice"
 
-    def test_t046_reload_rollback_on_failure(self, lex_en):
-        assert lex_en.get("welcome") == "Welcome"
-        with pytest.raises(LexFileNotFoundError):
-            lex_en.reload("nonexistent_locale_xyz")
-        # State preserved after failed reload
-        assert lex_en.locale == "en"
-        assert lex_en.get("welcome") == "Welcome"
+    def test_t045b_reload_changes_fallback(self, tmp_path):
+        es_lex = tmp_path / "es.lex"
+        es_lex.write_text("hello::Hola", encoding="utf-8")
+        en_lex = tmp_path / "en.lex"          # ← añadir
+        en_lex.write_text("hello::Hello", encoding="utf-8")  # ← añadir
+        lex = LEX(str(tmp_path), "fr", fallback_locale="en")
+        assert lex.fallback_locale == "en"
+        lex.reload(fallback_locale="es")
+        assert lex.fallback_locale == "es"
+        assert lex.locale == "es"
+        assert lex.get("hello") == "Hola"
 
-    def test_t047_duplicate_key_raises(self, tmp_path):
+    def test_t046_reload_rollback_preserves_fallback(self, lex_en):
+        old_lang_dir = lex_en.lang_dir
+        old_locale = lex_en.locale
+        old_fallback = lex_en.fallback_locale
+        old_filepath = lex_en.filepath
+        old_keys = lex_en.keys()
+        with pytest.raises(LexFileNotFoundError):
+            lex_en.reload(
+                "nonexistent_xyz",
+                fallback_locale="also_nonexistent"
+            )
+        assert lex_en.lang_dir == old_lang_dir
+        assert lex_en.locale == old_locale
+        assert lex_en.fallback_locale == old_fallback
+        assert lex_en.filepath == old_filepath
+        assert lex_en.keys() == old_keys
+        assert lex_en.get("welcome", "Alice") == "Welcome Alice"
+
+    def test_t047_load_with_custom_fallback(self, tmp_path):
+        pt_lex = tmp_path / "pt.lex"
+        pt_lex.write_text("hello::Oi\n", encoding="utf-8")
+        en_lex = tmp_path / "en.lex"          # ← añadir para el __init__
+        en_lex.write_text("hello::Hello", encoding="utf-8")
+        lex = LEX(str(tmp_path), "fr")        # carga en.lex como fallback
+        lex.load(str(tmp_path), "fr", fallback_locale="pt")
+        assert lex.fallback_locale == "pt"
+        assert lex.get("hello") == "Oi"
+
+    def test_t048_duplicate_key_raises(self, tmp_path):
         dup_lex = tmp_path / "test.lex"
         dup_lex.write_text("hello::First\nhello::Second\n", encoding="utf-8")
         with pytest.raises(LexParseError):
             LEX(str(tmp_path), "test")
 
-    def test_t048_malformed_line_raises(self, tmp_path):
+    def test_t049_malformed_line_raises(self, tmp_path):
         bad_lex = tmp_path / "test.lex"
         bad_lex.write_text(
             "valid::ok\nthis line has no separator\n", encoding="utf-8"
@@ -194,7 +239,7 @@ class TestConformance:
         with pytest.raises(LexParseError):
             LEX(str(tmp_path), "test")
 
-    def test_t049_empty_key_raises(self, tmp_path):
+    def test_t050_empty_key_raises(self, tmp_path):
         bad_lex = tmp_path / "test.lex"
         bad_lex.write_text(
             "valid::ok\n::value with no key\n", encoding="utf-8"
@@ -202,19 +247,22 @@ class TestConformance:
         with pytest.raises(LexParseError):
             LEX(str(tmp_path), "test")
 
-    def test_t050_file_not_found_raises(self, tmp_path):
+    def test_t051_file_not_found_raises(self, tmp_path):
         with pytest.raises(LexFileNotFoundError):
             LEX(str(tmp_path), "en")  # No files in directory
 
-    def test_t051_lazy_caching(self, lex):
-        # First access
-        result1 = lex.get("escape_newline")
-        # Second access
-        result2 = lex.get("escape_newline")
-        assert result1 == result2
-        assert result1 == "Line 1\nLine 2"
-        # Verify cache was populated
-        assert "escape_newline" in lex._cache_translations
+    def test_t052_lazy_caching_no_reprocess(self, lex):
+        # Mock _unescape to count calls
+        original_unescape = lex._unescape
+        call_count = [0]
+
+        def counting_unescape(value):
+            call_count[0] += 1
+            return original_unescape(value)
+        lex._unescape = counting_unescape
+        lex.get("escape_newline")
+        lex.get("escape_newline")
+        assert call_count[0] == 1  # Only called once
 
 
 # Additional Tests
@@ -239,8 +287,11 @@ class TestAdditional:
     def test_repr(self, lex):
         # Verify __repr__ is informative.
         r = repr(lex)
-        assert "Lexis" in r or "LEX" in r
-        assert lex.locale in r
+        assert r.startswith("Lexis(")
+        assert "locale=" in r
+        assert "keys=" in r
+        assert "cached keys=" in r
+        assert "filepath=" in r
 
 
 if __name__ == "__main__":

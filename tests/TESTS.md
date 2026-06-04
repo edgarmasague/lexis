@@ -276,11 +276,10 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-041 — Missing key returns key itself
+#### T-041 — Missing key raises error
 
 **Input:** `get("nonexistent_key")`  
-**Expected:** `nonexistent_key` *(or raises `LexKeyNotFoundError`)*  
-**Notes:** Returning the key is acceptable. Raising an error is also acceptable. Returning empty string is not.
+**Expected:** raises `LexKeyNotFoundError`
 
 ---
 
@@ -298,15 +297,21 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-044 — Locale fallback
+#### T-044a — Locale fallback (default)
 
-**Setup:** Request a locale with no `.lex` file (e.g. `fr`)  
-**Expected:** Runtime loads the fallback locale file without error  
-**Notes:** The fallback locale is determined by the runtime configuration.
+**Setup:** Request a locale with no `.lex` file (e.g. `fr`), default fallback is `"en"`
+**Expected:** Runtime loads the fallback locale file without error
 
 ---
 
-#### T-045 — Reload switches locale
+#### T-044b — Locale fallback (custom)
+
+**Setup:** Request a locale with no `.lex` file, custom fallback `fallback_locale="pt"`
+**Expected:** Runtime loads `pt.lex` and updates locale to `"pt"`
+
+---
+
+#### T-045a — Reload switches locale
 
 **Setup:**
 1. Load locale `es`
@@ -315,6 +320,17 @@ These tests verify runtime behavior beyond key lookup.
 4. Call `get("welcome", "Alice")` → verify English output
 
 **Expected:** Output changes after reload.
+
+---
+
+#### T-045b — Reload changes fallback locale
+
+**Setup:**
+1. Load locale `en` with fallback `en`
+2. Call `reload(fallback_locale="es")`
+3. Verify `fallback_locale` is now `"es"`
+
+**Expected:** Fallback locale changes after reload.
 
 ---
 
@@ -328,7 +344,14 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-047 — Duplicate key raises error
+#### T-047 — Load with custom fallback
+
+**Setup:** Call `load(lang_dir, "fr", fallback_locale="pt")` where only `pt.lex` exists
+**Expected:** `fallback_locale` is set to `"pt"` and `pt.lex` is loaded
+
+---
+
+#### T-048 — Duplicate key raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -341,7 +364,7 @@ hello::Second
 
 ---
 
-#### T-048 — Malformed line raises error
+#### T-049 — Malformed line raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -353,7 +376,7 @@ this line has no separator
 
 ---
 
-#### T-049 — Empty key raises error
+#### T-050 — Empty key raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -365,20 +388,20 @@ this line has no separator
 
 ---
 
-#### T-050 — File not found raises error
+#### T-051 — File not found raises error
 
 **Setup:** Call `load("nonexistent/path", "en")`  
 **Expected:** `LexFileNotFoundError` is raised.
 
 ---
 
-#### T-051 — Lazy caching: escape processed only once
+#### T-052 — Lazy caching: escape processed only once
 
 **Setup:**
 1. Call `get("escape_newline")` — first access
 2. Call `get("escape_newline")` — second access
 
-**Expected:** Both calls return identical output.  
+**Expected:** Both calls return identical output. `_unescape` is called exactly once.
 **Notes:** The runtime must not re-process escapes on subsequent calls.
 
 ---
@@ -389,7 +412,7 @@ this line has no separator
 - [ ] T-020 to T-029 — Escape sequences
 - [ ] T-030 to T-037 — Placeholders
 - [ ] T-038 to T-040 — Edge cases
-- [ ] T-041 to T-051 — Conformance
+- [ ] T-041 to T-052 — Conformance
 
 A runtime is **fully compliant** when all cases pass.
 

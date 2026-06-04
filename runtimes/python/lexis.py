@@ -245,7 +245,7 @@ class LEX:
         value = self._cache_fetch(key)
         # Apply printf-style formatting if arguments provided
         if not args:
-            return value
+            return value.replace("%%", "%")
         try:
             return value % args
         except TypeError as error:
