@@ -6,6 +6,10 @@
 **Lexis** (from the Greek *Léxis*: word / from the Latin *Lex*: law) is an agnostic, minimalist and lightweight translation system designed under the **Unix** philosophy.
 
 It separates human text from source code using a lightweight `.lex` format based on `key::value` entries and printf-style placeholders.
+Most translation systems are tied to a framework, a programming language, or a complex file format.
+
+Lexis solves a simpler problem:
+Store translations in a portable, human-readable, runtime-agnostic format that works the same way everywhere.
 
 Designed to work everywhere:
 
@@ -38,6 +42,28 @@ No logic.
 No imports.
 No namespaces.
 No magic.
+
+---
+
+## Why Lexis?
+
+JSON:
+- Requires parsers
+- Nested structures
+- Language-specific tooling
+
+YAML:
+- Complex grammar
+- Easy to break with indentation
+
+gettext:
+- Powerful but heavyweight
+
+Lexis:
+- One separator
+- Flat structure
+- Portable
+- Predictable
 
 ---
 
@@ -162,8 +188,8 @@ get("progress", 80)
 ```
 
 ```text
-get_or_default("missing", "N/A")
-→ N/A
+get_or_default("missing", "Hello %s", "Alice")
+→ Hello Alice
 ```
 
 ### Locale Detection
@@ -203,8 +229,8 @@ lexis/
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
 │   ├── RUNTIME_TEMPLATE.md
-│   ├── bash.md
-│   └── python.md
+│   ├── runtime-bash.md
+│   └── runtime-python.md
 │
 ├── lang/
 │   ├── en.lex

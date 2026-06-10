@@ -1,98 +1,166 @@
 #!/usr/bin/env bash
-# main.sh - LEX Independent Translation Engine
+# lexis.sh - LEXIS Independent Translation Engine
+# Official Bash Runtime
 
-LEX_FILEPATH=""
-LEX_LOCALE=""
+# Global state
+declare -A LEXIS_TRANSLATIONS
+LEXIS_FILE=""
+LEXIS_LOCALE=""
+LEXIS_FALLBACK_LOCALE="en"
 
-declare -A LEX_CACHE
+# Debug mode: set LEXIS_DEBUG=1 to enable
+LEXIS_DEBUG="${LEXIS_DEBUG:0}"
 
-_lex_detect_locale() {
-    echo "${LANG:0:2}"
+_lexis_debug() {
+    [[ "$LEXIS_DEBUG" == "1" ]] && printf '[lexis:debug] %s\n' "$*" >&2
 }
 
-_lex_resolve_filepath() {
+_lexis_trim() {
+    local value="$1"
+    value="${value#"${value%%[! $'\t']*}"}"
+    value="${value%"${value##*[! $'\t']}"}"
+    printf '%s' "$value"
+}
+
+_lexis_detect_locale() {
+    local lang="${LANG:-}"
+    if [[ -z "$lang" || "$lang" == "C" || "$lang" == "POSIX" ]]; then
+        printf '%s' "en"
+        return
+    fi
+    lang="${lang%%.*}"
+    lang="${lang//-/_}"
+    printf '%s' "${lang%%_*}" | tr '[:upper:]' '[:lower:]'
+}
+
+_lexis_resolve_filepath() {
     local lang_dir="$1"
     local locale="$2"
+    local fallback="$3"
     local filepath="${lang_dir}/${locale}.lex"
-    local fallback="${lang_dir}/en.lex"
+    local fallback_filepath="${lang_dir}/${fallback}.lex"
     if [[ -f "$filepath" ]]; then
-        echo "$filepath"
+        printf '%s' "$filepath"
         return 0
     fi
-    if [[ -f "$fallback" ]]; then
-        LEX_LOCALE="en"
-        echo "$fallback"
+    if [[ -f "$fallback_filepath" ]]; then
+        LEXIS_LOCALE="$fallback"
+        _lexis_debug "locale '${locale}' not found, falling back to '${fallback}'"
+        printf '%s' "$fallback_filepath"
         return 0
     fi
-    echo "[ERROR] No .lex file found for locale '${locale}' in '${lang_dir}'" >&2
+    printf '[lexis] error: no .lex file found for locale "%s" (fallback "%s") in "%s"\n' \
+        "$locale" "$fallback" "$lang_dir" >&2
     return 1
 }
 
-_lex_fetch_from_file() {
-    local key="$1"
-    local value
-    if [[ ! -f "$LEX_FILEPATH" ]]; then
-        echo "[ERROR] File not found: ${LEX_FILEPATH}" >&2
-        return 1
-    fi
-    value=$(grep "${key}::" "$LEX_FILEPATH" | head -n1 | cut -d: -f3-)
-    if [[ -z "$value" ]]; then
-        echo "[ERROR] Key not found: '${key}'" >&2
-        return 1
-    fi
-    echo "$value"
-}
-
-_lex_cache_fetch() {
-    local key="$1"
-    if [[ -z "${LEX_CACHE[$key]+x}" ]]; then
-        local value
-        value=$(_lex_fetch_from_file "$key") || return 1
-        LEX_CACHE[$key]="$value"
-    fi
-    echo "${LEX_CACHE[$key]}"
-}
-
-lex_load() {
+lexis_load() {
     local lang_dir="$1"
-    local locale="${2:-$(_lex_detect_locale)}"
-    LEX_LOCALE="$locale"
-    LEX_FILEPATH=$(_lex_resolve_filepath "$lang_dir" "$locale") || return 1
-    unset LEX_CACHE
-    declare -gA LEX_CACHE
+    local locale="${2:-$(_lexis_detect_locale)}"
+    local fallback="${3:-$LEXIS_FALLBACK_LOCALE}"
+    local lex_file
+    lex_file=$(_lexis_resolve_filepath "$lang_dir" "$locale" "$fallback") || return 1
+    unset LEXIS_TRANSLATIONS
+    declare -A LEXIS_TRANSLATIONS
+    LEXIS_FILE="$lex_file"
+    LEXIS_LOCALE="$locale"
+    LEXIS_FALLBACK_LOCALE="$fallback"
+    local count=0
+    while IFS= read -r line; do
+        [[ -z "$line" || "$line" =~ :: ]] && continue
+        local key="${line%%::*}"
+        local value="${line#*::}"
+        key="$(_lexis_trim "$key")"
+        [[ -z "$key" ]] && continue
+        LEXIS_TRANSLATIONS["$key"]="$value"
+        (( count++ ))
+    done < "$lex_file"
+    _lexis_debug "loaded '${lex_file}' - ${count} keys"
+    return 0
+}
+
+lex_reload() {
+    local locale="${1:-$LEXIS_LOCALE}"
+    local fallback="${2:-$LEXIS_FALLBACK_LOCALE}"
+    local lang_dir
+    lang_dir="$(dirname "$LEXIS_FILE")"
+    lexis_load "$lang_dir" "$locale" "$fallback"
 }
 
 lex_get() {
     local key="$1"
     shift
-    local value
-    value=$(_lex_cache_fetch "$key") || {
-        echo "$key"
+    local default_value=""
+    local has_default=0
+    local args=()
+    while [[ $# -gt 0 ]]; then
+        if [[ "$1" == "--default" ]]; then
+            has_default=1
+            default_value="${2:-}"
+            shift 2
+        else
+            args+=("$1")
+            shift
+        fi
+    done
+    if [[ ! -v LEXIS_TRANSLATIONS[$key] ]]; then
+        _lexis_debud "key '${key}' not found"
+        if [[ $has_default -eq 1 ]]; then
+            printf '%s\n' "$default_value"
+        else
+            printf '%s\n' "$key"
+        fi
         return 1
-    }
-    if [[ $# -gt 0 ]]; then
-        printf "$value\n" "$@"
+    fi
+    local text="${LEXIS_TRANSLATIONS[$key]}"
+    if [[ ${#args[0]} -gt 0 ]]; then
+                printf "${text}\n" "${args[@]}" 2>/dev/null || printf '%s\n' "$text"
     else
-        echo "$value"
+        printf '%s\n' "$text"
     fi
 }
 
-lex_reload() {
-    local lang_dir="$1"
-    local locale="${2:-$LEX_LOCALE}"
-    lex_load "$lang_dir" "$locale"
+lexis_has() {
+    [[ -v LEXIS_TRANSLATIONS[$1] ]]
 }
 
-main() {
-    lex_load "../lang"
-    lex_get "welcome" "LEX"
+lexis_count() {
+    printf '%d\n' "${#LEXIS_TRANSLATIONS[0]}"
+}
+
+lexis_clear() {
+    unset LEXIS_TRANSLATIONS
+    declare -gA LEXIS_TRANSLATIONS
+    LEXIS_FILE=""
+    LEXIS_LOCALE=""
+    _lexis_debug "translations cleared"
+}
+
+lexis_info() {
+    printf 'file:     %s\n' "${LEXIS_FILE:-"(none)"}"
+    printf 'locale:   %s\n' "${LEXIS_LOCALE:-"(none)"}"
+    printf 'fallback: %s\n' "${LEXIS_FALLBACK_LOCALE}"
+    printf 'keys:     %d\n' "${#LEXIS_TRANSLATIONS[@]}"
+    printf 'debug:    %s\n' "${LEXIS_DEBUG}"
+}
+
+_main() {
+    local lang_dir
+    lang_dir="$(dirname "${BASH_SOURCE[0]}")/../../lang"
+    if ! lexis_load "$lang_dir"; then
+        prinft '[lexis:demo] could not load lang dir: %s\n' "$lang_dir" >&2
+        return 1
+    fi
+    lexis_info
+    echo "---"
+    lex_get "welcome" "Lexis"
     lex_get "modules_available"
     lex_get "error_file" "foo.txt"
     echo "---"
-    lex_reload "../lang" "en"
-    lex_get "welcome" "LEX"
+    lex_reload "en"
+    lex_get "welcome" "Lexis"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main
+    _main
 fi

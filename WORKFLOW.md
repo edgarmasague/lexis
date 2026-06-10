@@ -2,6 +2,12 @@
 
 Concise guide for creating, maintaining, and using `.lex` files in multilingual projects.
 
+For the formal format specification, see `docs/LEX_FORMAT_SPEC.md`.
+
+For runtime implementation details, see `docs/RUNTIME_TEMPLATE.md`.
+
+This document focuses on recommended usage patterns and project organization.
+
 ---
 
 ## 1. Project Structure
@@ -75,7 +81,7 @@ Recommended flow when adding a new key:
 Load the `.lex` file using any compatible Lexis runtime and use the standard API:
  
 ```text
-load("lang", "es", "pt")               # load locale
+load("lang", "es", "pt")               # locale=es, fallback=pt
  
 get("welcome", "Alice")          # → Bienvenido a Alice
 get("error_file", "data.csv")    # → Archivo no encontrado: data.csv
@@ -96,7 +102,7 @@ For runtime-specific usage and full API documentation see `docs/`.
 
 ---
 
-## 5. Key Naming Conventions
+## 5. Key Naming Conventions (Recommended)
 
 ```text
 # ✅ Correct
@@ -104,10 +110,14 @@ welcome::
 error_file::
 modules_available_list::
 
-# ❌ Avoid
+# ⚠️ Avoid
 Welcome::        # uppercase
 errorFile::      # camelCase
 err-file::       # hyphens
+
+# ❌ Wrong
+error File::     # Space
+
 ```
 
 Recommended prefixes by context:

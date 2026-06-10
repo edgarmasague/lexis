@@ -1,10 +1,13 @@
 # test.py - Official Test Suite for LEXIS
 # Based on TESTS.md
 
-import os, sys
+import os
+import sys
 import pytest
 # Add runtimes/python to path so lexis.py can be imported
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "runtimes", "python"))
+sys.path.insert(0, os.path.join(
+    os.path.dirname(__file__), "..", "..", "..", "runtimes", "python"
+))
 from lexis import LEX, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
 
 # Path to test fixtures directory
