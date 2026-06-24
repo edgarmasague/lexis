@@ -113,56 +113,56 @@ A runtime passes a test if `get(key, ...args)` returns exactly the expected outp
 
 ---
 
-#### T-020 — `\n` newline
+#### T-101 — `\n` newline
 
 **Input:** `get("escape_newline")`  
 **Expected:** `Line 1` + LF + `Line 2`
 
 ---
 
-#### T-021 — `\t` tab
+#### T-102 — `\t` tab
 
 **Input:** `get("escape_tab")`  
 **Expected:** `Col1` + TAB + `Col2`
 
 ---
 
-#### T-022 — `\\` backslash
+#### T-103 — `\\` backslash
 
 **Input:** `get("escape_backslash")`  
 **Expected:** `C:\Program Files\Lexis`
 
 ---
 
-#### T-023 — `\"` double quote
+#### T-104 — `\"` double quote
 
 **Input:** `get("escape_quote")`  
 **Expected:** `She said "hello"`
 
 ---
 
-#### T-024 — `\r` carriage return
+#### T-105 — `\r` carriage return
 
 **Input:** `get("escape_carriage_return")`  
 **Expected:** `before` + CR + `after`
 
 ---
 
-#### T-025 — `\b` backspace
+#### T-106 — `\b` backspace
 
 **Input:** `get("escape_backspace")`  
 **Expected:** `before` + BS + `after`
 
 ---
 
-#### T-026 — `\v` vertical tab
+#### T-107 — `\v` vertical tab
 
 **Input:** `get("escape_vertical_tab")`  
 **Expected:** `before` + VT + `after`
 
 ---
 
-#### T-027 — Unknown escape passes through literally
+#### T-108 — Unknown escape passes through literally
 
 **Input:** `get("escape_unknown")`  
 **Expected:** `unknown \q escape passes through`  
@@ -170,14 +170,14 @@ A runtime passes a test if `get(key, ...args)` returns exactly the expected outp
 
 ---
 
-#### T-028 — Trailing backslash is literal
+#### T-109 — Trailing backslash is literal
 
 **Input:** `get("escape_trailing_backslash")`  
 **Expected:** `trailing backslash is literal\`
 
 ---
 
-#### T-029 — Combined escapes with placeholders
+#### T-110 — Combined escapes with placeholders
 
 **Input:** `get("escape_combined", "Alice", 99)`  
 **Expected:** `Name:` + TAB + `Alice` + LF + `Score:` + TAB + `99`
@@ -188,49 +188,49 @@ A runtime passes a test if `get(key, ...args)` returns exactly the expected outp
 
 ---
 
-#### T-030 — `%s` string
+#### T-201 — `%s` string
 
 **Input:** `get("placeholder_string", "Alice")`  
 **Expected:** `Hello Alice`
 
 ---
 
-#### T-031 — `%d` integer
+#### T-202 — `%d` integer
 
 **Input:** `get("placeholder_integer", 3)`  
 **Expected:** `You have 3 messages`
 
 ---
 
-#### T-032 — `%f` float
+#### T-203 — `%f` float
 
 **Input:** `get("placeholder_float", 3.75)`  
 **Expected:** `Rating: 3.750000` *(default float precision)*
 
 ---
 
-#### T-033 — `%x` hexadecimal
+#### T-204 — `%x` hexadecimal
 
 **Input:** `get("placeholder_hex", 255)`  
 **Expected:** `Hex value: ff`
 
 ---
 
-#### T-034 — `%o` octal
+#### T-205 — `%o` octal
 
 **Input:** `get("placeholder_octal", 8)`  
 **Expected:** `Octal value: 10`
 
 ---
 
-#### T-035 — `%c` character
+#### T-206 — `%c` character
 
 **Input:** `get("placeholder_char", 65)`  
 **Expected:** `Char: A`
 
 ---
 
-#### T-036 — `%%` literal percent
+#### T-207 — `%%` literal percent
 
 **Input:** `get("placeholder_percent")`  
 **Expected:** `100% completed`  
@@ -238,7 +238,7 @@ A runtime passes a test if `get(key, ...args)` returns exactly the expected outp
 
 ---
 
-#### T-037 — Multiple placeholders
+#### T-208 — Multiple placeholders
 
 **Input:** `get("placeholder_multiple", "Alice", 10, 4.5)`  
 **Expected:** `User Alice has 10 points and rating 4.50`
@@ -249,21 +249,21 @@ A runtime passes a test if `get(key, ...args)` returns exactly the expected outp
 
 ---
 
-#### T-038 — Value starting with `#` is not a comment
+#### T-301 — Value starting with `#` is not a comment
 
 **Input:** `get("not_a_comment")`  
 **Expected:** `#not a comment`
 
 ---
 
-#### T-039 — Double `::` in value
+#### T-302 — Double `::` in value
 
 **Input:** `get("double_colon")`  
 **Expected:** `key::value with double colon in value`
 
 ---
 
-#### T-040 — Triple `::` in value
+#### T-303 — Triple `::` in value
 
 **Input:** `get("triple_colon")`  
 **Expected:** `key:::value with triple colon`
@@ -276,42 +276,42 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-041 — Missing key raises error
+#### T-401 — Missing key raises error
 
 **Input:** `get("nonexistent_key")`  
 **Expected:** raises `LexKeyNotFoundError`
 
 ---
 
-#### T-042 — Missing key with default
+#### T-402 — Missing key with default
 
 **Input:** `get_or_default("nonexistent_key", "fallback")`  
 **Expected:** `fallback`
 
 ---
 
-#### T-043 — Missing key with default and args
+#### T-403 — Missing key with default and args
 
 **Input:** `get_or_default("nonexistent_key", "Hello %s", "Alice")`  
 **Expected:** `Hello Alice`
 
 ---
 
-#### T-044a — Locale fallback (default)
+#### T-404 — Locale fallback (default)
 
 **Setup:** Request a locale with no `.lex` file (e.g. `fr`), default fallback is `"en"`
 **Expected:** Runtime loads the fallback locale file without error
 
 ---
 
-#### T-044b — Locale fallback (custom)
+#### T-405 — Locale fallback (custom)
 
 **Setup:** Request a locale with no `.lex` file, custom fallback `fallback_locale="pt"`
 **Expected:** Runtime loads `pt.lex` and updates locale to `"pt"`
 
 ---
 
-#### T-045a — Reload switches locale
+#### T-406 — Reload switches locale
 
 **Setup:**
 1. Load locale `es`
@@ -323,7 +323,7 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-045b — Reload changes fallback locale
+#### T-407 — Reload changes fallback locale
 
 **Setup:**
 1. Load locale `en` with fallback `en`
@@ -334,7 +334,7 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-046 — Reload rollback on failure
+#### T-408 — Reload rollback on failure
 
 **Setup:**
 1. Load a valid locale
@@ -344,14 +344,14 @@ These tests verify runtime behavior beyond key lookup.
 
 ---
 
-#### T-047 — Load with custom fallback
+#### T-409 — Load with custom fallback
 
 **Setup:** Call `load(lang_dir, "fr", fallback_locale="pt")` where only `pt.lex` exists
 **Expected:** `fallback_locale` is set to `"pt"` and `pt.lex` is loaded
 
 ---
 
-#### T-048 — Duplicate key raises error
+#### T-410 — Duplicate key raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -364,7 +364,7 @@ hello::Second
 
 ---
 
-#### T-049 — Malformed line raises error
+#### T-411 — Malformed line raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -376,7 +376,7 @@ this line has no separator
 
 ---
 
-#### T-050 — Empty key raises error
+#### T-412 — Empty key raises error
 
 **Setup:** Load a `.lex` file containing:
 
@@ -388,14 +388,14 @@ this line has no separator
 
 ---
 
-#### T-051 — File not found raises error
+#### T-413 — File not found raises error
 
 **Setup:** Call `load("nonexistent/path", "en")`  
 **Expected:** `LexFileNotFoundError` is raised.
 
 ---
 
-#### T-052 — Lazy caching: escape processed only once
+#### T-414 — Lazy caching: escape processed only once
 
 **Setup:**
 1. Call `get("escape_newline")` — first access
@@ -408,11 +408,13 @@ this line has no separator
 
 ## Compliance Checklist
 
-- [ ] T-001 to T-011 — Parsing
-- [ ] T-020 to T-029 — Escape sequences
-- [ ] T-030 to T-037 — Placeholders
-- [ ] T-038 to T-040 — Edge cases
-- [ ] T-041 to T-052 — Conformance
+| Category         | Range             | Tests |
+| ---------------- | ----------------- | ----- |
+| Parsing          | `T-001` – `T-011` | 11    |
+| Escape sequences | `T-101` – `T-110` | 10    |
+| Placeholders     | `T-201` – `T-208` | 8     |
+| Edge cases       | `T-301` – `T-303` | 3     |
+| Conformance      | `T-401` – `T-414` | 14    |
 
 A runtime is **fully compliant** when all cases pass.
 
