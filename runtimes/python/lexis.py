@@ -19,7 +19,7 @@ class LexParseError(Exception):
     pass
 
 
-class LEX:
+class Lexis:
     """
     Lexis Engine
     Load .lex files and provides key based translation with
@@ -344,14 +344,14 @@ if __name__ == "__main__":
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         lang_dir = os.path.join(base_dir, "..", "lang")
-        lex = LEX(lang_dir)
-        print(lex.get("welcome", "LEX"))
-        print(lex.get("modules_available"))
-        print(lex.get("error_file", "foo.txt"))
-        print(repr(lex))
+        lexis = Lexis(lang_dir)
+        print(lexis.get("welcome", "LEX"))
+        print(lexis.get("modules_available"))
+        print(lexis.get("error_file", "foo.txt"))
+        print(repr(lexis))
 
-        lex.reload("en")
-        print(lex.get("welcome", "Lexis"))
+        lexis.reload("en")
+        print(lexis.get("welcome", "Lexis"))
 
     except LexFileNotFoundError as error:
         print(f"[ERROR] {error}")

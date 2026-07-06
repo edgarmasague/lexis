@@ -9,7 +9,7 @@ Full API documentation for the Python runtime.
 Copy `runtimes/python/lexis.py` into your project and import it:
 
 ```python
-from lexis import LEX, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
+from lexis import Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
 ```
 
 No external dependencies. Requires Python 3.10+.
@@ -20,117 +20,117 @@ No external dependencies. Requires Python 3.10+.
 
 The Python runtime uses an **eager + lazy** model:
 
-| Phase | When | What |
-|---|---|---|
-| **Eager** | On `LEX()`, `load()`, or `reload()` | Reads and validates the entire file — detects duplicates and malformed lines immediately |
-| **Lazy** | On first `get()` for a key | Processes escape sequences and stores the result in cache |
+| Phase     | When                                  | What                                                                                     |
+|-----------|---------------------------------------|------------------------------------------------------------------------------------------|
+| **Eager** | On `Lexis()`, `load()`, or `reload()` | Reads and validates the entire file — detects duplicates and malformed lines immediately |
+| **Lazy**  | On first `get()` for a key            | Processes escape sequences and stores the result in cache                                |
 
 ---
 
 ## API
 
-### `LEX(lang_dir, locale=None, fallback_locale="en")`
+### `Lexis(lang_dir, locale=None, fallback_locale="en")`
 
 Initializes the runtime. Auto-detects locale from `$LANG`. Falls back to the default locale file if the requested one does not exist.
 
 ```python
-lex = LEX("lang")                               # detects $LANG automatically
-lex = LEX("lang", "fr")                         # forces locale (falls back if not found)
-lex = LEX("lang", "fr", fallback_locale="pt")  # custom fallback
+lex = Lexis("lang")                               # detects $LANG automatically
+lex = Lexis("lang", "fr")                         # forces locale (falls back if not found)
+lex = Lexis("lang", "fr", fallback_locale="pt")  # custom fallback
 ```
 
 ---
 
-### `lex.load(lang_dir, locale=None, fallback_locale="en")`
+### `lexis.load(lang_dir, locale=None, fallback_locale="en")`
 
 Loads a `.lex` file from a new directory, optionally with a new locale.  
 Useful when embedding Lexis in projects with multiple translation directories.
 
 ```python
-lex.load("other/lang", "fr")
-lex.load("other/lang", "fr", fallback_locale="pt")
+lexis.load("other/lang", "fr")
+lexis.load("other/lang", "fr", fallback_locale="pt")
 ```
 
 ---
 
-### `lex.get(key, *args)`
+### `lexis.get(key, *args)`
 
 Returns the translation with `printf`-style substitution.  
 Processes escape sequences on first access and caches the result.
 Raises `LexKeyNotFoundError` if the key doesn't exist or if placeholder formatting fails (e.g., wrong number or type of arguments)
 
 ```python
-lex.get("welcome", "Alice", 3)      # → "Welcome Alice to Lexis!"
-lex.get("error_file", "data.csv")   # → "File not found: data.csv"
-lex.get("progress", 42)             # → "Progress: 42% completed"
-lex.get("app_name")                 # → "Lexis"
+lexis.get("welcome", "Alice", 3)      # → "Welcome Alice to Lexis!"
+lexis.get("error_file", "data.csv")   # → "File not found: data.csv"
+lexis.get("progress", 42)             # → "Progress: 42% completed"
+lexis.get("app_name")                 # → "Lexis"
 ```
 
 ---
 
-### `lex.get_or_default(key, default, *args)`
+### `lexis.get_or_default(key, default, *args)`
 
 Returns the translation or a default value if the key is not found.  
 Applies `args` to the default if the translation is missing.
 
 ```python
-lex.get_or_default("missing", "N/A")              # → "N/A"
-lex.get_or_default("missing", "Hello %s", "Bob")  # → "Hello Bob"
+lexis.get_or_default("missing", "N/A")              # → "N/A"
+lexis.get_or_default("missing", "Hello %s", "Bob")  # → "Hello Bob"
 ```
 
 ---
 
-### `lex.reload(locale=None, fallback_locale=None)`
+### `lexis.reload(locale=None, fallback_locale=None)`
 
 Reloads translations from the same directory, optionally switching locale.  
 **Restores previous state if the reload fails.**
 
 ```python
-lex.reload()                     # reloads current locale
-lex.reload("en")                 # switches to en.lex and reloads
-lex.reload("en", "pt")           # switches locale and fallback
-lex.reload(fallback_locale="pt") # keeps locale, changes fallback
+lexis.reload()                     # reloads current locale
+lexis.reload("en")                 # switches to en.lex and reloads
+lexis.reload("en", "pt")           # switches locale and fallback
+lexis.reload(fallback_locale="pt") # keeps locale, changes fallback
 ```
 
 ---
 
-### `lex.keys()`
+### `lexis.keys()`
 
 Returns all loaded translation keys as a tuple.
 
 ```python
-lex.keys()   # → ('welcome', 'error_file', 'progress', ...)
+lexis.keys()   # → ('welcome', 'error_file', 'progress', ...)
 ```
 
 ---
 
-### `"key" in lex`
+### `"key" in lexis`
 
 Checks if a key exists.
 
 ```python
-"welcome" in lex    # → True
-"missing" in lex    # → False
+"welcome" in lexis    # → True
+"missing" in lexis    # → False
 ```
 
 ---
 
-### `len(lex)`
+### `len(lexis)`
 
 Returns the total number of loaded keys.
 
 ```python
-len(lex)   # → 42
+len(lexis)   # → 42
 ```
 
 ---
 
-### `repr(lex)`
+### `repr(lexis)`
 
 Shows the current runtime state including total keys and cached keys.
 
 ```python
-repr(lex)
+repr(lexis)
 # Lexis(locale='en', fallback='en', keys=42, cached keys=3, filepath='lang/en.lex')
 ```
 
@@ -146,8 +146,8 @@ repr(lex)
 
 ```python
 try:
-    lex = LEX("lang")
-    print(lex.get("welcome", "Alice"))
+    lexis = Lexis("lang")
+    print(lexis.get("welcome", "Alice"))
 
 except LexFileNotFoundError as error:
     print(f"[ERROR] {error}")
@@ -163,19 +163,19 @@ except LexParseError as error:
 
 ```python
 # $LANG=es_ES.UTF-8 → loads lang/es.lex
-lex = LEX("lang")
+lexis = Lexis("lang")
 
 # $LANG=fr_FR.UTF-8, lang/fr.lex not found → falls back to "en" (default)
-lex = LEX("lang")
+lexis = Lexis("lang")
 
 # $LANG=C or empty → falls back to "en" (default)
-lex = LEX("lang")
+lexis = Lexis("lang")
 
 # $LANG=fr_FR.UTF-8, lang/fr.lex not found → falls back to "pt" (custom)
-lex = LEX("lang", fallback_locale="pt")
+lexis = Lexis("lang", fallback_locale="pt")
 
 # Force explicit locale
-lex = LEX("lang", "en")
+lexis = Lexis("lang", "en")
 ```
 
 ---
@@ -183,23 +183,23 @@ lex = LEX("lang", "en")
 ## Full Example
 
 ```python
-from lexis import LEX, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
+from lexis import Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError
 
 try:
-    lex = LEX("lang")
-    print(repr(lex))                                # keys=42, cached keys=0
+    lexis = Lexis("lang")
+    print(repr(lexis))                                # keys=42, cached keys=0
 
-    print(lex.get("welcome", "Alice", 3))           # → Welcome Alice to Lexis!
-    print(lex.get("error_file", "data.csv"))        # → File not found: data.csv
-    print(lex.get("progress", 42))                  # → Progress: 42% completed
-    print(repr(lex))                                # keys=42, cached keys=3
+    print(lexis.get("welcome", "Alice", 3))           # → Welcome Alice to Lexis!
+    print(lexis.get("error_file", "data.csv"))        # → File not found: data.csv
+    print(lexis.get("progress", 42))                  # → Progress: 42% completed
+    print(repr(lexis))                                # keys=42, cached keys=3
 
-    print(lex.get_or_default("missing", "N/A"))     # → N/A
-    print("welcome" in lex)                         # → True
-    print(len(lex))                                 # → 42
+    print(lexis.get_or_default("missing", "N/A"))     # → N/A
+    print("welcome" in lexis)                         # → True
+    print(len(lexis))                                 # → 42
 
-    lex.reload("es")
-    print(lex.get("welcome", "Alice", 3))           # → Bienvenida Alice a Lexis!
+    lexis.reload("es")
+    print(lexis.get("welcome", "Alice", 3))           # → Bienvenida Alice a Lexis!
 
 except LexFileNotFoundError as error:
     print(f"[ERROR] {error}")
