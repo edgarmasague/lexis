@@ -49,14 +49,12 @@ Each file is self-documented with a header comment indicating which test cases u
 ### Python
 
 ```bash
-cd tests/runtimes/python
 pytest tests/runtimes/python/ -v
 ```
 
 ### Bash
 
 ```bash
-# Coming soon
 bash tests/runtimes/bash/test.sh
 ```
 

@@ -98,7 +98,7 @@ get("welcome", "Alice")          # → Welcome Alice
 load("lang")   # detects system locale automatically, falls back if not found
 ```
  
-For runtime-specific usage and full API documentation see `docs/`.
+For runtime-specific usage and full API documentation see `runtimes/<lang>/README.md`.
 
 ---
 

@@ -228,9 +228,7 @@ This ensures:
 lexis/
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
-│   ├── RUNTIME_TEMPLATE.md
-│   ├── runtime-bash.md
-│   └── runtime-python.md
+│   └── RUNTIME_TEMPLATE.md
 │
 ├── lang/
 │   ├── en.lex
@@ -238,8 +236,10 @@ lexis/
 │
 ├── runtimes/
 │   ├── bash/
+│   │   ├── README.md
 │   │   └── lexis.sh
 │   └── python/
+│       ├── README.md
 │       └── lexis.py
 │
 ├── tests/
@@ -254,6 +254,8 @@ lexis/
 │   │   ├── malformed_line.lex
 │   │   └── empty_key.lex
 │   └── runtimes/
+│       ├── bash/
+│       │   └── test.sh
 │       └── python/
 │           └── test.py
 │

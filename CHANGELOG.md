@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - 2026-07-06
+
+### Added
+- Bash runtime: `_lexis_unescape()` — lazy escape sequence processing
+- Bash runtime: `_lexis_parse_line()` — robust line parser with error reporting
+- Bash runtime: `_lexis_load_file()` — file loader with eager validation
+- Bash runtime: `_lexis_cache_fetch()` — lazy cache with unescape on first access
+- Bash runtime: `_lexis_rollback()` — rollback helper for safe `lexis_reload()`
+- Bash runtime: `lexis_has()`, `lexis_len()`, `lexis_clear()`, `lexis_info()` public helpers
+- `runtimes/bash/README.md` — full Bash runtime API documentation
+- `runtimes/python/README.md` — full Python runtime API documentation
+- `tests/runtimes/bash/test.sh` — official Bash conformance test suite
+- `.gitattributes` — enforces LF line endings for `.sh`, `.py`, `.md`, `.lex`
+
+### Changed
+- **Bash runtime overhaul** (`runtimes/bash/lexis.sh`):
+  - Globals renamed to `_LEXIS_*` with split `_LEXIS_RAW_TRANSLATIONS` / `_LEXIS_CACHE_TRANSLATIONS`
+  - `lexis_reload()` now rollback-safe — restores full state on failure
+  - `lexis_clear()` now resets `_LEXIS_FALLBACK_LOCALE` to `"en"`
+  - `lexis_get()` and `lexis_get_or_default()` use safe `printf "%s\n" "$(printf ...)"` pattern
+- **Python runtime** (`runtimes/python/lexis.py`): class renamed `LEX` → `Lexis`
+- `docs/runtime-bash.md` → `runtimes/bash/README.md`
+- `docs/runtime-python.md` → `runtimes/python/README.md`
+- `CONTRIBUTING.md`, `README.md`, `WORKFLOW.md`, `tests/README.md` updated to reference new runtime doc paths
+
+### Fixed
+- Bash runtime: `while IFS= read -r line || [[ -n "$line" ]]` replaced — caused sourcing failure in Bash 5.2
+- Bash runtime: format string injection in `lexis_get_or_default()` last branch
+- Bash runtime: `_LEXIS_TRANSLATIONS` declaration renamed to `_LEXIS_CACHE_TRANSLATIONS`
+- Python runtime: CRLF line endings normalized to LF
+
+---
+
+## [0.6.1] - 2026-06-24
+
+### Changed
+- `tests/TESTS.md` — renumbered test cases to new ID ranges:
+  - Escape sequences: `T-101` – `T-110`
+  - Placeholders: `T-201` – `T-208`
+  - Edge cases: `T-301` – `T-303`
+  - Conformance: `T-401` – `T-414`
+- `tests/TESTS.md` — added compliance checklist table
+- `tests/runtimes/python/test.py` — function names and section headings updated to match new IDs
+- `tests/README.md` — fixture table formatting and compliance wording cleaned up
+
+---
+
 ## [0.6.0] - 2026-06-10
 
 ### Added

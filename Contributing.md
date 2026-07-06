@@ -120,7 +120,7 @@ See `docs/RUNTIME_TEMPLATE.md` for the full specification.
 Once implemented:
  
 - Place the file at `runtimes/<lang>/lexis.<ext>`
-- Add documentation at `docs/runtime-<lang>.md`
+- Add documentation at `runtimes/<lang>/README.md`
 - Add an entry to the runtimes table in `README.md`
 - Add test implementation at `tests/runtimes/<lang>/test.<ext>`
 ---
