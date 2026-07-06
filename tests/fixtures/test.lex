@@ -17,7 +17,7 @@ value_trailing_spaces::trailing spaces are preserved
 value_unicode::Hello 👋 World
 value_utf8::Héllo Wörld — ñoño
 
-# Escape Sequences T-020 to T-029
+# Escape Sequences T-101 to T-110
 
 escape_newline::Line 1\nLine 2
 escape_tab::Col1\tCol2
@@ -30,7 +30,7 @@ escape_combined::Name:\t%s\nScore:\t%d
 escape_unknown::unknown \q escape passes through
 escape_trailing_backslash::trailing backslash is literal\
 
-# Placeholders T-030 to T-037
+# Placeholders T-201 to T-208
 
 placeholder_string::Hello %s
 placeholder_integer::You have %d messages
@@ -41,7 +41,7 @@ placeholder_char::Char: %c
 placeholder_percent::100%% completed
 placeholder_multiple::User %s has %d points and rating %.2f
 
-# Edge Cases T-038 to T-040
+# Edge Cases T-301 to T-303
 
 not_a_comment::#not a comment
 double_colon::key::value with double colon in value

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.1] - 2026-07-06
+ 
+### Added
+- `tests/fixtures/empty_key.lex` — fixture for T-412 (empty key raises `LexParseError`)
+### Changed
+- `tests/fixtures/test.lex` — section comment IDs updated to new ranges (`T-101`, `T-201`, `T-301`)
+- `tests/fixtures/duplicate_key.lex` — comment updated `T-047` → `T-410`
+- `tests/fixtures/malformed_line.lex` — comment updated `T-048` → `T-411`
+- `tests/fixtures/en.lex` — comment updated `T-044/T-045` → `T-406, T-408`
+- `tests/fixtures/es.lex` — comment updated `T-044/T-045` → `T-406, T-408`
+- `tests/fixtures/empty_key.lex` — header corrected to "Empty Key File"
+- All fixture files: CRLF → LF
+---
+
 ## [0.7.0] - 2026-07-06
 
 ### Added
