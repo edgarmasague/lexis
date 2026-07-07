@@ -49,7 +49,7 @@ Each file is self-documented with a header comment indicating which test cases u
 ### Python
 
 ```bash
-pytest tests/runtimes/python/ -v
+pytest tests/runtimes/python/test.py -v
 ```
 
 ### Bash

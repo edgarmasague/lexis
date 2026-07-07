@@ -91,10 +91,11 @@ Returns `0` on success, `1` on failure. On failure, previous translations remain
 Returns all loaded translation keys, one per line.
 
 ```bash
-lexis_keys   # → welcome
-error_file
-progress
-...
+lexis_keys
+# → welcome
+# → error_file  
+# → progress
+# → ...
 ```
 
 Use with `while read` or command substitution:
