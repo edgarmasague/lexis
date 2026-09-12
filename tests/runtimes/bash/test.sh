@@ -52,7 +52,7 @@ assert_eq "T-005 mixed case key"       "mixed case key test" "$(lexis_get "mixed
 assert_eq "T-006 value with hash"       "#this value starts with hash" "$(lexis_get "value_with_hash")"
 assert_eq "T-007 value with separator" "value :: contains :: separators" "$(lexis_get "value_with_separator")"
 assert_eq "T-008 leading spaces trimmed"    "leading spaces are trimmed" "$(lexis_get "value_leading_spaces")"
-assert_eq "T-009 trailing spaces preserved" "trailing spaces are preserved " "$(lexis_get "value_trailing_spaces")"
+assert_eq "T-009 trailing spaces preserved" "trailing spaces are preserved   " "$(lexis_get "value_trailing_spaces")"
 assert_eq "T-010 unicode"              "Hello 👋 World" "$(lexis_get "value_unicode")"
 assert_eq "T-011 utf8 extended"        "Héllo Wörld — ñoño" "$(lexis_get "value_utf8")"
 

@@ -278,7 +278,7 @@ _lexis_prepare_args() {
     # Replace %% with placeholder to avoid false positives
     local _tmp="${fmt//%%/$'\x01'}"
     # Fast path: no %c means no conversion needed (O(1))
-    if [[ "$_tmp" != *%*c* ]]; then
+    if [[ ! "$_tmp" =~ %[-+\ 0#]*[0-9]*c ]]; then
         _LEXIS_ARGS_RESULT=("$@")
         return
     fi
