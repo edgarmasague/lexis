@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test.sh - Official Test Suite for LEXIS Bash Runtime
 # Based on TESTS.md
-set -euo pipefail
+set -uo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -11,7 +11,7 @@ PASSED=0
 FAILED=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/../../../../runtimes/bash/lexis.sh"
+source "${SCRIPT_DIR}/../../../runtimes/bash/lexis.sh"
 
 assert_eq() {
     local test_name="$1"
