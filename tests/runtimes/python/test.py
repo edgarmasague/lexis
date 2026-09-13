@@ -300,7 +300,7 @@ class TestAdditional:
         assert r.startswith("Lexis(")
         assert "locale=" in r
         assert "keys=" in r
-        assert "cached keys=" in r
+        assert "cached_keys=" in r
         assert "filepath=" in r
 
 

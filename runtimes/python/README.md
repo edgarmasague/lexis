@@ -36,7 +36,7 @@ Initializes the runtime. Auto-detects locale from `$LANG`. Falls back to the def
 ```python
 lex = Lexis("lang")                               # detects $LANG automatically
 lex = Lexis("lang", "fr")                         # forces locale (falls back if not found)
-lex = Lexis("lang", "fr", fallback_locale="pt")  # custom fallback
+lex = Lexis("lang", "fr", fallback_locale="pt")   # custom fallback
 ```
 
 ---

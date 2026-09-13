@@ -79,7 +79,7 @@ Reloads translations from the same directory, optionally switching locale. **Res
 lexis_reload                          # reloads current locale
 lexis_reload "en"                     # switches to en.lex and reloads
 lexis_reload "en" "pt"                # switches locale and fallback
-lexis_reload "" "pt"                   # keeps locale, changes fallback
+lexis_reload "" "pt"                  # keeps locale, changes fallback
 ```
 
 Returns `0` on success, `1` on failure. On failure, previous translations remain available.

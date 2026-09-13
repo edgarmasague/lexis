@@ -326,7 +326,7 @@ class Lexis:
             f"Lexis(locale={self.locale!r}, "
             f"fallback={self.fallback_locale!r}, "
             f"keys={len(self._raw_translations)}, "
-            f"cached keys={len(self._cache_translations)}, "
+            f"cached_keys={len(self._cache_translations)}, "
             f"filepath={self.filepath!r})"
         )
 
