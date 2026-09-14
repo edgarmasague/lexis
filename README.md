@@ -28,6 +28,15 @@ Designed to work everywhere:
 
 ---
 
+## Demo
+
+<p align="center">
+  <img src="assets/lexis.gif" alt="Lexis demo" width="700">
+</p>
+
+---
+
+
 ## Philosophy
 
 Lexis follows a small and strict philosophy:

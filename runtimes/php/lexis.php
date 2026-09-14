@@ -428,7 +428,7 @@
          * Demo: Load translations and run basic operations
          */
         try {
-            $langDir = __DIR__ . '/../lang';
+            $langDir = __DIR__ . '/../../lang';
             $lex     = new Lexis($langDir);
             echo $lex->get("welcome", "LEX") . "\n";
             echo $lex->get("modules_available") . "\n";

@@ -60,6 +60,14 @@ bash tests/runtimes/bash/test.sh
 
 ---
 
+### PHP
+
+```bash
+php tests/runtimes/php/test.php
+```
+
+---
+
 ## Adding a New Runtime
 
 1. Create `tests/runtimes/<lang>/test.<ext>`

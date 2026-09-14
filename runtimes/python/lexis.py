@@ -343,7 +343,7 @@ if __name__ == "__main__":
     # Demo: Load translations and run basic operations
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        lang_dir = os.path.join(base_dir, "..", "lang")
+        lang_dir = os.path.join(base_dir, "..", "..", "lang")
         lexis = Lexis(lang_dir)
         print(lexis.get("welcome", "LEX"))
         print(lexis.get("modules_available"))
