@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/lexis-logo.jpeg" alt="Lexis — Independent Translation Engine" width="600">
+</p>
+
 # Lexis · Independent Translation Engine
 
 > *"Lex una, linguae multae."*
@@ -15,8 +19,9 @@ Designed to work everywhere:
 
 | Runtime | Status     |
 | ------- | ---------- |
-| Python  | ✅ stable  |
-| Bash    | ✅ stable  |
+| [Python](runtimes/python/README.md)  | ✅ stable  |
+| [Bash](runtimes/bash/README.md)    | ✅ stable  |
+| [PHP](runtimes/php/README.md)     | ✅ stable  |
 | C       | 🔜 planned |
 | Lua     | 🔜 planned |
 | JS      | 🔜 planned |
@@ -226,8 +231,12 @@ This ensures:
 
 ```text
 lexis/
+├── assets/
+│   └── lexis-logo.jpeg
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
+│   ├── FAQ.md
+│   ├── DESIGN_DECISIONS.md
 │   └── RUNTIME_TEMPLATE.md
 │
 ├── lang/
@@ -238,6 +247,10 @@ lexis/
 │   ├── bash/
 │   │   ├── README.md
 │   │   └── lexis.sh
+│   ├── php/
+│   │   ├── README.md
+│   │   ├── lexis.php
+│   │   └── LexisServiceProvider.php
 │   └── python/
 │       ├── README.md
 │       └── lexis.py
@@ -255,6 +268,8 @@ lexis/
 │   │   └── empty_key.lex
 │   └── runtimes/
 │       ├── bash/
+│       │   └── test.sh
+│       ├── php/
 │       │   └── test.sh
 │       └── python/
 │           └── test.py

@@ -190,9 +190,9 @@ Value contains :: inside text
 
 ## What happens when a key is missing?
 
-The runtime must either:
-- raise a `LexKeyNotFoundError`, or
-- return the key itself as a fallback string
+The runtime MUST either raise a `LexKeyNotFoundError`.
+
+Most runtimes also provide a helper such as:
 
 Returning an empty string is not acceptable.
 Most runtimes also provide a helper such as:
