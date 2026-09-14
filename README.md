@@ -31,7 +31,7 @@ Designed to work everywhere:
 ## Demo
 
 <p align="center">
-  <img src="assets/lexis.gif" alt="Lexis demo" width="700">
+  <img src="assets/lexis-demo.gif" alt="Lexis demo" width="700">
 </p>
 
 ---
@@ -241,7 +241,9 @@ This ensures:
 ```text
 lexis/
 ├── assets/
-│   └── lexis-logo.jpeg
+│   ├── lexis-demo.gif
+│   ├── lexis-logo.jpeg
+│   └── lexis.cast
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
 │   ├── FAQ.md
