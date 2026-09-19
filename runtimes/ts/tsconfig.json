@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "module": "NodeNext",
+        "moduleResolution":"NodeNext",
+        "strict": true,
+        "esModuleInterop": true,
+        "outDir": "dist",
+        "declaration": true,
+        "types": [
+            "node"
+        ]
+    },
+    "include": [
+        "lexis.ts"
+    ]
+}

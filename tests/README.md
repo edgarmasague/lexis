@@ -68,6 +68,14 @@ php tests/runtimes/php/test.php
 
 ---
 
+### TypeScript
+
+```bash
+tsx tests/runtimes/ts/test.ts
+```
+
+---
+
 ## Adding a New Runtime
 
 1. Create `tests/runtimes/<lang>/test.<ext>`

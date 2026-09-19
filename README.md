@@ -22,6 +22,7 @@ Designed to work everywhere:
 | [Python](runtimes/python/README.md)  | ✅ stable  |
 | [Bash](runtimes/bash/README.md)    | ✅ stable  |
 | [PHP](runtimes/php/README.md)     | ✅ stable  |
+| [TypeScript](runtimes/ts/README.md)| ✅ stable  |
 | C       | 🔜 planned |
 | Lua     | 🔜 planned |
 | JS      | 🔜 planned |
@@ -262,9 +263,12 @@ lexis/
 │   │   ├── README.md
 │   │   ├── lexis.php
 │   │   └── LexisServiceProvider.php
-│   └── python/
+│   ├── python/
+│   │   ├── README.md
+│   │   └── lexis.py
+│   └── ts/
 │       ├── README.md
-│       └── lexis.py
+│       └── lexis.ts
 │
 ├── tests/
 │   ├── README.md
@@ -281,9 +285,11 @@ lexis/
 │       ├── bash/
 │       │   └── test.sh
 │       ├── php/
-│       │   └── test.sh
-│       └── python/
-│           └── test.py
+│       │   └── test.php
+│       ├── python/
+│       │   └── test.py
+│       └── ts/
+│           └── test.ts
 │
 ├── README.md
 ├── WORKFLOW.md
