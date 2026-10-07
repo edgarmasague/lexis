@@ -9,11 +9,9 @@
 
 **Lexis** (from the Greek *Léxis*: word / from the Latin *Lex*: law) is an agnostic, minimalist and lightweight translation system designed under the **Unix** philosophy.
 
-It separates human text from source code using a lightweight `.lex` format based on `key::value` entries and printf-style placeholders.
-Most translation systems are tied to a framework, a programming language, or a complex file format.
-
-Lexis solves a simpler problem:
-Store translations in a portable, human-readable, runtime-agnostic format that works the same way everywhere.
+It separates human text from source code using a lightweight `.lex` format based on `key::value` entries and printf-style placeholders.  
+Most translation systems are tied to a framework, a programming language, or a complex file format.  
+Lexis solves a simpler problem store translations in a portable, human-readable, runtime-agnostic format that works the same way everywhere.
 
 Designed to work everywhere:
 
@@ -102,16 +100,14 @@ error_file::No se encontró el archivo: %s
 
 ## Features
 
-* UTF-8 support
-* printf-style placeholders
-* escape sequences
-* automatic locale detection
-* fallback locale support
-* lazy runtime caching
-* runtime agnostic
-* zero external dependencies
-
----
+- UTF-8 support
+- printf-style placeholders
+- escape sequences
+- automatic locale detection
+- fallback locale support
+- lazy runtime caching
+- runtime agnostic
+- zero external dependencies
 
 ## Placeholders
 
@@ -120,12 +116,14 @@ Lexis uses printf-style placeholders.
 | Placeholder | Type                 |
 | ----------- | -------------------- |
 | `%s`        | String               |
-| `%d`        | Integer              |
+| `%d` or `i` | Integer              |
 | `%f`        | Float                |
 | `%x`        | Hexadecimal          |
 | `%o`        | Octal                |
 | `%c`        | Character            |
 | `%%`        | Literal percent sign |
+
+> **Note:** Placeholders follow a small closed grammar: `%[-][0][width][.precision]specifier`. See `docs/FORMAT_SPECIFIERS.md`.
 
 Example:
 
@@ -150,8 +148,7 @@ Lexis supports lightweight escape sequences inside values.
 | `\b`     | Backspace       |
 | `\v`     | Vertical tab    |
 
-Unknown escape sequences remain unchanged.
-
+Unknown escape sequences remain unchanged.  
 Example:
 
 ```text
@@ -161,8 +158,6 @@ path::C:\\Program Files\\Lexis
 
 quote::\"Lex una, linguae multae.\"
 ```
-
----
 
 ## Example Usage
 
@@ -213,12 +208,10 @@ Lexis automatically detects the system locale from `$LANG`.
 
 ```text
 $LANG=es_ES.UTF-8
-→ loads es.lex
+→ tries es_ES.lex, es_ES/main.lex, es.lex, es/main.lex in order, then fallback
 ```
 
-If the locale file does not exist, it falls back to en.lex by default (this behavior can be customized in the runtime configuration).
-
----
+If the requested locale resolution chain fails, it falls back to `en` by default.
 
 ## Runtime Behavior
 
@@ -231,11 +224,9 @@ Lexis runtimes follow a strongly recommended hybrid loading strategy:
 
 This ensures:
 
-* malformed files fail immediately
-* duplicate keys are detected on load
-* runtime lookups remain fast
-
----
+- malformed files fail immediately
+- duplicate keys are detected on load
+- runtime lookups remain fast
 
 ## Project Structure
 
@@ -247,9 +238,10 @@ lexis/
 │   └── lexis.cast
 ├── docs/
 │   ├── LEX_FORMAT_SPEC.md
+│   ├── FORMAT_SPECIFIERS.md
+│   ├── RUNTIME_TEMPLATE.md
 │   ├── FAQ.md
-│   ├── DESIGN_DECISIONS.md
-│   └── RUNTIME_TEMPLATE.md
+│   └── DESIGN_DECISIONS.md
 │
 ├── lang/
 │   ├── en.lex
@@ -306,50 +298,41 @@ Official documents:
 | Document                  | Description                          |
 | ------------------------- | ------------------------------------ |
 | `LEX_FORMAT_SPEC.md`      | Official `.lex` format specification |
+| `FORMAT_SPECIFIERS.md`    | Normative behavior and grammar of all placeholders    |
 | `RUNTIME_TEMPLATE.md`     | Runtime implementation guidelines    |
-
----
+| `TESTS.md`                | Formal conformance test suite        |
 
 ## What Lexis Is Not
 
 Lexis deliberately excludes:
 
-* nesting
-* imports
-* multiline blocks
-* logic
-* conditionals
-* pluralization systems
-* namespaces
-* heavy serialization formats
+- nesting
+- imports
+- multiline blocks
+- logic
+- conditionals
+- pluralization systems
+- namespaces
+- heavy serialization formats
 
 Use `\n` for multiline text.
 
----
-
 ## Versioning
 
-| Version | Meaning                       |
-| ------- | ----------------------------- |
-| `0.x`   | Development                   |
-| `1.0`   | Stable core specification     |
-| `1.x`   | Backward-compatible additions |
-
----
+| Version | Meaning                                        |
+| ------- | ---------------------------------------------- |
+| `0.x`   | Development                                    |
+| `1.0`   | Stable core specification                      |
+| `1.x`   | Revisions that keep every valid 1.0 file valid |
 
 ## Goal
 
-Lexis is designed to remain understandable without external tooling or complex parsing logic.
-
-The format is the law.
+Lexis is designed to remain understandable without external tooling or complex parsing logic.  
+The format is the law.  
 The implementation is free.
-
----
 
 ## License
 
 MIT License
 
----
-
-*Lex una, linguae multae.*
+> *Lex una, linguae multae.*
