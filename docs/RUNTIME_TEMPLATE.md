@@ -1,7 +1,7 @@
 # Lexis Runtime Template
 
-> Implement this API in any lang.
-> The format is the law. The implementation is free.
+> Implement this API in any lang.  
+> The format is the law. The implementation is free.  
 > *"Lex una, linguae multae."*
 
 ## State
@@ -47,6 +47,9 @@ small helper. They MUST NOT be replaced by the host's `printf` family (see `FORM
 | Correctly rounded parse  | `%f` with a decimal string argument         | Decimal string to nearest double                                        |
 
 ## Internal Functions
+> **Note:** The functions below are the reference structure.  
+A runtime MAY add private helpers when its language needs them (for example `_format`), as long as the nine public operations and the behavior defined in `TESTS.md` do not change.   
+Keep helpers to a minimum, and keep the names below for the functions listed here.
 
 ### `_detect_locale() → string`
 
@@ -58,8 +61,6 @@ Detects the system locale from the `LANG` environment variable.
 - Otherwise, extracts the language and optional region, normalized as `language_REGION` (lowercase language, uppercase region).
 - If the extracted code contains more than two parts (e.g., `zh_Hans_CN`), only the language and region are retained as `language_REGION`.
 - Fallback resolution, including the language-only step of the regional chain, is handled by `_resolve_filepath`.
-
-
 
 Examples:
 
@@ -185,6 +186,20 @@ Fetches a value from the cache.
 **Returns:** Unescaped (processed) value string
 
 **Raises:** `LexKeyNotFoundError` — If key not found in `_raw_translations`
+
+### `_format(template, args) → string` *(optional helper)*
+
+Lexis's own `printf`-style formatter. It takes the place of the host language's `printf` family, which MUST NOT be used (see Required Primitives), and applies placeholder formatting to an already unescaped template.  
+Used by `get()` and by `get_or_default()` (for its `default`), so a runtime MAY extract it to avoid duplicating the logic.
+
+**Args:**
+- `template` — Value after escape processing, before formatting
+- `args` — Values for placeholders
+
+**Returns:** Formatted string   
+**Raises:** `LexFormatError` — see the placeholder rules in `get()`
+
+> **Note:** Runtimes that inline the formatting inside `get()` and `get_or_default()` are equally conformant.
 
 ## Public API
 **A conformant runtime exposes these nine operations.**
