@@ -4,6 +4,7 @@
 import os
 import re
 from decimal import Context, Decimal, ROUND_HALF_UP
+from typing import Any
 
 
 class LexFileNotFoundError(Exception):
@@ -29,38 +30,40 @@ class LexFormatError(Exception):
 
 # {language} or {language}_{REGION}. fullmatch() is always used, so a
 # trailing newline can never slip through.
-_LOCALE_PATTERN = re.compile(r"[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)?")
-_NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]+")
+_LOCALE_PATTERN: re.Pattern[str] = re.compile(
+    r"[A-Za-z0-9]+(?:[_-][A-Za-z0-9]+)?"
+)
+_NAME_PATTERN: re.Pattern[str] = re.compile(r"[A-Za-z0-9_-]+")
 
 # One line with its LF, or a last line without one. A lone CR is content.
-_LINES = re.compile(r"[^\n]*\n|[^\n]+")
+_LINES:        re.Pattern[str] = re.compile(r"[^\n]*\n|[^\n]+")
 # %[-][0][width][.precision]specifier, or %%
-_PLACEHOLDER = re.compile(
+_PLACEHOLDER:  re.Pattern[str] = re.compile(
     r"%(?:(?P<pct>%)|(?P<left>-)?(?P<zero>0)?(?P<width>[0-9]+)?"
     r"(?:\.(?P<prec>[0-9]+))?(?P<spec>[sdifxoc]))"
 )
 # Strict argument formats for strings used with %d / %f
-_PLAIN_INT = re.compile(r"-?[0-9]+")
-_PLAIN_DECIMAL = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
+_PLAIN_INT:     re.Pattern[str] = re.compile(r"-?[0-9]+")
+_PLAIN_DECIMAL: re.Pattern[str] = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
 
-_DEFAULT_LOCALE = "en"
+_DEFAULT_LOCALE: str = "en"
 
 # Placeholder limits
-_MAX_WIDTH = 1024
-_MAX_PRECISION = 15
-_WIDTH_DIGITS = len(str(_MAX_WIDTH))
-_PRECISION_DIGITS = len(str(_MAX_PRECISION))
-_DEFAULT_PRECISION = 6  # %f without a precision
+_MAX_WIDTH:         int = 1024
+_MAX_PRECISION:     int = 15
+_WIDTH_DIGITS:      int = len(str(_MAX_WIDTH))
+_PRECISION_DIGITS:  int = len(str(_MAX_PRECISION))
+_DEFAULT_PRECISION: int = 6  # %f without a precision
 
 # Argument ranges
-_INT64_MIN = -2 ** 63
-_INT64_MAX = 2 ** 63 - 1
-_FLOAT_LIMIT = 2 ** 63  # %f accepts |value| below this
-_MAX_CODE_POINT = 0x10FFFF
-_SURROGATES = range(0xD800, 0xE000)
+_INT64_MIN:      int = -2 ** 63
+_INT64_MAX:      int = 2 ** 63 - 1
+_FLOAT_LIMIT:    int = 2 ** 63  # %f accepts |value| below this
+_MAX_CODE_POINT: int = 0x10FFFF
+_SURROGATES:   range = range(0xD800, 0xE000)
 
 # Wide enough for the largest intermediate value of %f (below 2^113).
-_FLOAT_CONTEXT = Context(prec=80, rounding=ROUND_HALF_UP)
+_FLOAT_CONTEXT: Context = Context(prec=80, rounding=ROUND_HALF_UP)
 
 
 class Lexis:
@@ -74,7 +77,7 @@ class Lexis:
     """
 
     # Official escape sequences
-    _ESCAPE_SEQUENCES = {
+    _ESCAPE_SEQUENCES: dict[str, str] = {
         r'\\': '\\',
         r'\n': '\n',
         r'\t': '\t',
@@ -87,9 +90,9 @@ class Lexis:
     def __init__(
             self,
             lang_dir: str,
-            locale: str | None = None,
+            locale:   str | None = None,
             fallback_locale: str = "en",
-            name: str = "main"
+            name:            str = "main"
     ) -> None:
         """
         Initialize Lexis with a language directory and optional locale.
@@ -101,12 +104,12 @@ class Lexis:
                 Default is "main".
 
         """
-        self.lang_dir = ""
-        self.locale = ""
-        self.fallback_locale = "en"
-        self.name = "main"
-        self.filepath = ""
-        self._raw_translations: dict[str, str] = {}
+        self.lang_dir:                       str = ""
+        self.locale:                         str = ""
+        self.fallback_locale:                str = "en"
+        self.name:                           str = "main"
+        self.filepath:                       str = ""
+        self._raw_translations:   dict[str, str] = {}
         self._cache_translations: dict[str, str] = {}
         self.load(lang_dir, locale, fallback_locale, name)
 
@@ -116,12 +119,12 @@ class Lexis:
         Returns:
             locale code: "language" or "language_REGION" (e.g. 'en', 'es_VE').
         """
-        lang = os.environ.get("LANG", "")
+        lang: str = os.environ.get("LANG", "")
         lang = re.split(r"[.@]", lang, maxsplit=1)[0].strip()
         # Handle C, POSIX, or missing LANG
         if not lang or lang in ("C", "POSIX"):
             return _DEFAULT_LOCALE
-        parts = lang.replace("-", "_").split("_")
+        parts: list = lang.replace("-", "_").split("_")
         if len(parts) > 2:
             # zh_Hans_CN -> zh_CN: keep only language and region
             parts = [parts[0], parts[-1]]
@@ -155,12 +158,12 @@ class Lexis:
                 or no file is found.
         """
         # Validate and normalize every input before touching the filesystem
-        codes = []
+        codes: list[str] = []
         for code in (locale, fallback_locale):
             if (not isinstance(code, str)
                     or not _LOCALE_PATTERN.fullmatch(code)):
                 raise LexFileNotFoundError(f"Invalid locale code: {code!r}")
-            parts = code.replace("-", "_").split("_")
+            parts: list[str] = code.replace("-", "_").split("_")
             codes.append(
                 parts[0].lower() if len(parts) == 1
                 else f"{parts[0].lower()}_{parts[1].upper()}"
@@ -175,7 +178,7 @@ class Lexis:
             ) from error
 
         # Every place to look, in order: es_VE, then es, then the fallback
-        candidates = []
+        candidates: list[tuple[str, str]] = []
         for requested in codes:
             for code in dict.fromkeys((requested, requested.split("_")[0])):
                 candidates.append(
@@ -201,8 +204,8 @@ class Lexis:
         Returns:
             Value with escape sequences converted.
         """
-        result = []
-        i = 0
+        result: list[str] = []
+        i: int = 0
         while i < len(value):
             # Check for backslash followed by another character
             if value[i] == "\\" and i + 1 < len(value):
@@ -231,7 +234,7 @@ class Lexis:
             LexParseError:
                 On malformed lines or duplicates.
         """
-        line = raw_line
+        line: str = raw_line
         if line.endswith("\n"):
             line = line[:-1]
             if line.endswith("\r"):
@@ -246,6 +249,8 @@ class Lexis:
                 f"missing '::' separator"
             )
         # Split on first occurrence of separator
+        key: str
+        value: str
         key, _, value = line.partition("::")
         key = key.strip()
         # Key cannot be empty after trimming
@@ -275,7 +280,7 @@ class Lexis:
         self._cache_translations = {}
         try:
             with open(self.filepath, "rb") as file:
-                data = file.read()
+                data: bytes = file.read()
         except OSError as error:
             # Race condition: file deleted after resolve but before open
             raise LexFileNotFoundError(
@@ -283,17 +288,17 @@ class Lexis:
             ) from error
         try:
             # utf-8-sig removes a leading BOM (and only a leading one)
-            text = data.decode("utf-8-sig")
+            text: str = data.decode("utf-8-sig")
         except UnicodeDecodeError as error:
             raise LexParseError(
                 f"Invalid UTF-8 in {self.filepath}: {error}"
             ) from error
         for line_num, line in enumerate(_LINES.findall(text), start=1):
-            result = self._parse_line(line, line_num)
+            result: tuple[str, str] | None = self._parse_line(line, line_num)
             if result is not None:
                 self._raw_translations[result[0]] = result[1]
 
-    def _cache_fetch(self, key: str) -> str:
+    def _get_value(self, key: str) -> str:
         """
         Fetch value from cache.
         Args:
@@ -323,27 +328,83 @@ class Lexis:
             LexFormatError:
                 If an argument is missing or invalid for its specifier.
         """
-        out = []
-        cursor = 0
-        used = 0
+
+        def format_float(arg: Any, decimals: int, strip_zeros: bool) -> str:
+            # Text for %f, and %s with a float
+            if isinstance(arg, str) and not _PLAIN_DECIMAL.fullmatch(arg):
+                raise ValueError("not a decimal number")
+            number: Decimal = Decimal(
+                float(arg) if isinstance(arg, str) else arg
+            )
+            if not -_FLOAT_LIMIT < number < _FLOAT_LIMIT:
+                raise ValueError("out of range")
+            text: str = format(number.quantize(
+                Decimal(1).scaleb(-decimals), ROUND_HALF_UP,
+                _FLOAT_CONTEXT), "f")
+            if strip_zeros and "." in text:
+                text = text.rstrip("0").rstrip(".")
+            if text.startswith("-") and not text.strip("-0."):
+                text = text[1:]
+            return text
+
+        def format_integer(arg: Any, spec: str) -> str:
+            # Text for %d %i %x %o %c, and %s with an integer
+            if isinstance(arg, str) and not _PLAIN_INT.fullmatch(arg):
+                raise ValueError("not an integer")
+            number: Decimal = Decimal(arg)
+            if (not _INT64_MIN <= number <= _INT64_MAX
+                    or number != number.to_integral_value()):
+                raise ValueError("not a 64-bit integer")
+            integer: int = int(number)
+            if spec == "c":
+                if (not 1 <= integer <= _MAX_CODE_POINT
+                        or integer in _SURROGATES):
+                    raise ValueError("invalid code point")
+                return chr(integer)
+            if spec in "xo":
+                return "-" * (integer < 0) + format(abs(integer), spec)
+            return str(integer)
+
+        def pad_text(
+                text: str,
+                spec: str,
+                left: bool,
+                zero: bool,
+                width: int
+        ) -> str:
+            # Pad the text to its width
+            if left:
+                return text.ljust(width)
+            if zero and spec in "dixof":
+                return text.zfill(width)
+            return text.rjust(width)
+
+        out: list[str] = []
+        cursor:    int = 0
+        used:      int = 0
         while True:
-            start = template.find("%", cursor)
+            # Copy everything up to the next "%"
+            start: int = template.find("%", cursor)
             if start == -1:
                 out.append(template[cursor:])
                 return "".join(out)
             out.append(template[cursor:start])
-            placeholder = _PLACEHOLDER.match(template, start)
+            # "%%", or a "%" that starts nothing valid, is a literal "%"
+            placeholder: re.Match[str] | None = _PLACEHOLDER.match(
+                template, start
+            )
             cursor = placeholder.end() if placeholder else start + 1
             if placeholder is None or placeholder["pct"]:
                 out.append("%")  # "%%", or a "%" that starts nothing valid
                 continue
-
-            spec = placeholder["spec"]
-            width_digits = (placeholder["width"] or "").lstrip("0")
-            precision_digits = (placeholder["prec"] or "").lstrip("0")
-            too_wide = (len(width_digits) > _WIDTH_DIGITS
-                        or int(width_digits or 0) > _MAX_WIDTH)
-            bad_precision = placeholder["prec"] is not None and (
+            # Out of limits: stays literal and uses no argument
+            spec: str = placeholder["spec"]
+            has_precision: bool = placeholder["prec"] is not None
+            width_digits: str = (placeholder["width"] or "").lstrip("0")
+            precision_digits: str = (placeholder["prec"] or "").lstrip("0")
+            too_wide: bool = (len(width_digits) > _WIDTH_DIGITS
+                              or int(width_digits or 0) > _MAX_WIDTH)
+            bad_precision: bool = has_precision and (
                 spec != "f"
                 or len(precision_digits) > _PRECISION_DIGITS
                 or int(precision_digits or 0) > _MAX_PRECISION
@@ -351,14 +412,20 @@ class Lexis:
             if too_wide or bad_precision:
                 out.append(placeholder.group())  # literal, uses no argument
                 continue
-
+            width: int = int(width_digits or 0)
+            decimals: int = (
+                int(precision_digits or 0) if has_precision
+                else _DEFAULT_PRECISION
+            )
+            # The argument
             if used >= len(args):
                 raise LexFormatError(f"Missing argument for '%{spec}'")
-            arg = args[used]
+            arg: Any = args[used]
             used += 1
-
-            # Any ValueError / TypeError / ArithmeticError below means
-            # "invalid argument for this specifier"
+            # Convert it to text. Any ValueError / TypeError /
+            # ArithmeticError below means "invalid argument for this
+            # specifier"
+            text: str
             try:
                 if isinstance(arg, bool) or arg is None:
                     raise ValueError("bool and None are never valid")
@@ -366,65 +433,27 @@ class Lexis:
                     arg.encode("utf-8")  # raises if it is not valid UTF-8
                     text = arg
                 elif spec == "f" or (spec == "s" and isinstance(arg, float)):
-                    if (isinstance(arg, str)
-                            and not _PLAIN_DECIMAL.fullmatch(arg)):
-                        raise ValueError("not a decimal number")
-                    # Decimal(float) keeps the exact binary value
-                    number = Decimal(
-                        float(arg) if isinstance(arg, str) else arg
-                    )
-                    if not -_FLOAT_LIMIT < number < _FLOAT_LIMIT:  # or NaN
-                        raise ValueError("out of range")
-                    decimals = (
-                        _DEFAULT_PRECISION if placeholder["prec"] is None
-                        else int(precision_digits or 0)
-                    )
-                    text = format(number.quantize(
-                        Decimal(1).scaleb(-decimals), ROUND_HALF_UP,
-                        _FLOAT_CONTEXT), "f")
-                    if placeholder["prec"] is None and "." in text:
-                        text = text.rstrip("0").rstrip(".")
-                    if text.startswith("-") and not text.strip("-0."):
-                        text = text[1:]  # never "-0"
+                    text = format_float(arg, decimals, not has_precision)
                 else:  # %d %i %x %o %c, and %s with an integer
-                    if isinstance(arg, str) and not _PLAIN_INT.fullmatch(arg):
-                        raise ValueError("not an integer")
-                    number = Decimal(arg)
-                    if (not _INT64_MIN <= number <= _INT64_MAX
-                            or number != number.to_integral_value()):
-                        raise ValueError("not a 64-bit integer")
-                    integer = int(number)
-                    if spec == "c":
-                        if (not 1 <= integer <= _MAX_CODE_POINT
-                                or integer in _SURROGATES):
-                            raise ValueError("invalid code point")
-                        text = chr(integer)
-                    elif spec in "xo":  # signed magnitude
-                        text = "-" * (integer < 0) + format(abs(integer), spec)
-                    else:
-                        text = str(integer)
+                    text = format_integer(arg, spec)
             except (TypeError, ValueError, ArithmeticError) as error:
                 raise LexFormatError(
                     f"Invalid argument {arg!r} for '%{spec}'"
                 ) from error
 
-            # len() counts code points. "-" wins over "0", and "0" only
-            # applies to numbers.
-            width = int(width_digits or 0)
-            if placeholder["left"]:
-                text = text.ljust(width)
-            elif placeholder["zero"] and spec in "dixof":
-                text = text.zfill(width)
-            else:
-                text = text.rjust(width)
-            out.append(text)
+            # Width. len() counts code points. "-" wins over "0", and "0" only
+            # applies to numbers
+            out.append(pad_text(
+                text, spec, bool(placeholder["left"]),
+                bool(placeholder["zero"]), width
+            ))
 
     def load(
             self,
             lang_dir: str,
-            locale: str | None = None,
+            locale:   str | None = None,
             fallback_locale: str = "en",
-            name: str = "main"
+            name:            str = "main"
     ) -> None:
         """
         Load a .lex file from the given directory.
@@ -449,7 +478,7 @@ class Lexis:
         name = "main" if name is None else name
         if locale is None:  # only None auto-detects; "" is invalid
             locale = self._detect_locale()
-        filepath = self._resolve_filepath(
+        filepath: str = self._resolve_filepath(
             lang_dir, locale, fallback_locale, name
         )
         self.lang_dir = os.fspath(lang_dir)
@@ -473,7 +502,7 @@ class Lexis:
                 If an argument is missing or can't be coerced to
                 the type its placeholder needs.
         """
-        return self._format(self._cache_fetch(key), args)
+        return self._format(self._get_value(key), args)
 
     def get_or_default(self, key: str, default: str, *args) -> str:
         """
@@ -491,9 +520,9 @@ class Lexis:
 
     def reload(
             self,
-            locale: str | None = None,
+            locale:          str | None = None,
             fallback_locale: str | None = None,
-            name: str | None = None
+            name:            str | None = None
     ) -> None:
         """
         Reload translations, optionally switching locale.
@@ -506,9 +535,16 @@ class Lexis:
             name: New entry-file name, or None to keep the current one.
         """
         # Save current state
-        previous = (
-            self.lang_dir, self.locale, self.fallback_locale, self.name,
-            self.filepath, self._raw_translations, self._cache_translations
+        previous: tuple[
+            str, str, str, str, str, dict[str, str], dict[str, str]
+        ] = (
+            self.lang_dir,
+            self.locale,
+            self.fallback_locale,
+            self.name,
+            self.filepath,
+            self._raw_translations,
+            self._cache_translations
         )
         try:
             # Try to load new locale
@@ -522,8 +558,12 @@ class Lexis:
         except (LexFileNotFoundError, LexParseError):
             # On failure: restore previous state and raise the error
             (
-                self.lang_dir, self.locale, self.fallback_locale, self.name,
-                self.filepath, self._raw_translations,
+                self.lang_dir,
+                self.locale,
+                self.fallback_locale,
+                self.name,
+                self.filepath,
+                self._raw_translations,
                 self._cache_translations
             ) = previous
             raise
@@ -585,14 +625,14 @@ class Lexis:
 
     def __contains__(self, key: str) -> bool:
         # "Key in lex" membership testing
-        return key in self._raw_translations
+        return isinstance(key, str) and key in self._raw_translations
 
 
 if __name__ == "__main__":
     # Demo: Load translations and run basic operations
     try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        lang_dir = os.path.join(base_dir, "..", "..", "lang")
+        base_dir: str = os.path.dirname(os.path.abspath(__file__))
+        lang_dir: str = os.path.join(base_dir, "..", "..", "lang")
         lexis = Lexis(lang_dir)
         print(lexis.get("welcome", "LEX"))
         print(lexis.get("modules_available"))
