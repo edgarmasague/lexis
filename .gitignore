@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+tests/fixtures/crlf.lex -text
+tests/fixtures/crlf_trailing.lex -text
+tests/fixtures/cr_inside.lex -text
