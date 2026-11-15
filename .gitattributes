@@ -3,3 +3,6 @@
 *.py text eol=lf
 *.md text eol=lf
 *.lex text eol=lf
+tests/fixtures/crlf.lex -text
+tests/fixtures/crlf_trailing.lex -text
+tests/fixtures/cr_inside.lex -text
