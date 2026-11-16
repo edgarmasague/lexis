@@ -1,8 +1,6 @@
 # Lexis · Bash Runtime
 
-Full API documentation for the Bash runtime.
-
----
+Official Bash runtime for Lexis. Behaves like `lexis.py` (verified against it with randomized differential tests).
 
 ## Installation
 
@@ -12,9 +10,7 @@ Copy `runtimes/bash/lexis.sh` into your project and source it:
 source "path/to/lexis.sh"
 ```
 
-No external dependencies. Requires Bash 4+ (for associative arrays).
-
----
+Requires **Bash 4.2+** and POSIX utilities. `bc` is used by `%f` only. `iconv` validates UTF-8 when it is available; without it, a pure-Bash check does the same, line by line.
 
 ## Loading Strategy
 
@@ -22,30 +18,49 @@ The Bash runtime uses an **eager + lazy** model:
 
 | Phase     | When                                  | What                                                                                     |
 |-----------|---------------------------------------|------------------------------------------------------------------------------------------|
-| **Eager** | On `lexis_load()` or `lexis_reload()` | Reads and validates the entire file — detects duplicates and malformed lines immediately |
+| **Eager** | On `lexis_load()` or `lexis_reload()` | Reads and validates the entire file (UTF-8, malformed lines, duplicate keys)             |
 | **Lazy**  | On first `lexis_get()` for a key      | Processes escape sequences and stores the result in cache                                |
 
----
+## Calling conventions
+ 
+Bash has no return values, so results are printed to **stdout without a trailing newline** and errors go to **stderr** with a distinct return code.
+ 
+An **empty or omitted** optional argument means "not given" (Python's `None`).
+ 
+> **Tip:** `$(lexis_get ...)` runs in a subshell, so the lazy cache write is lost and trailing newlines are stripped. It works, but it is slower. Calling the function directly (e.g. `lexis_get "k"; echo`) keeps the cache.
+ 
+| Error                  | Code | When                                                                 |
+|------------------------|------|----------------------------------------------------------------------|
+| `LexFileNotFoundError` | `2`  | No file for locale/fallback, or an invalid input                     |
+| `LexKeyNotFoundError`  | `3`  | Key does not exist                                                   |
+| `LexParseError`        | `4`  | Malformed line, duplicate key, invalid UTF-8                         |
+| `LexFormatError`       | `5`  | Missing argument, or an argument that is invalid for its specifier   |
+ 
 
 ## API
 
-### `lexis_load(lang_dir, [locale], [fallback_locale])`
+### `lexis_load(lang_dir, [locale], [fallback_locale], [name])`
 
-Loads a `.lex` file from the given directory. Auto-detects locale from `$LANG`. Falls back to the default locale file if the requested one does not exist.
+Locale is detected from `$LANG` when omitted. `fallback_locale` defaults to `en`, `name` to `main`.
 
 ```bash
 lexis_load "lang"                           # detects $LANG automatically
 lexis_load "lang" "fr"                      # forces locale (falls back if not found)
 lexis_load "lang" "fr" "pt"                 # custom fallback
+lexis_load "lang" "" "" "app"               # custom entry-file name
 ```
 
-Returns `0` on success, `1` on failure. Errors are printed to stderr.
-
----
+Resolution order for `es_VE`, then the same steps for the fallback:
+ 
+1. `lang/es_VE.lex`
+2. `lang/es_VE/{name}.lex`
+3. `lang/es.lex`
+4. `lang/es/{name}.lex`
+Locales must be `language` or `language_REGION` (`es-ve` is normalized to `es_VE`) and `name` only letters, digits, `_` and `-`; anything else is a `LexFileNotFoundError` before touching the filesystem. The current locale becomes the code of the file actually found. A garbage `$LANG` falls back to `en`.
 
 ### `lexis_get(key, [args...])`
 
-Returns the translation with `printf`-style substitution. Processes escape sequences on first access and caches the result.
+Returns the translation with `printf`-style substitution. The substitution is Lexis' own implementation (never the host's `printf`), so the output is identical to the other runtimes. Escape sequences are processed on first access and the result is cached.
 
 ```bash
 lexis_get "welcome" "Alice" 3         # → "Welcome Alice to Lexis!"
@@ -54,7 +69,7 @@ lexis_get "progress" 42               # → "Progress: 42% completed"
 lexis_get "app_name"                  # → "Lexis"
 ```
 
-Returns `1` if the key doesn't exist or if placeholder formatting fails. Errors are printed to stderr.
+Returns `3` if the key doesn't exist and `5` if a placeholder can't be formatted. Errors are printed to stderr.
 
 ---
 
@@ -67,11 +82,11 @@ lexis_get_or_default "missing" "N/A"              # → "N/A"
 lexis_get_or_default "missing" "Hello %s" "Bob"   # → "Hello Bob"
 ```
 
-Always returns `0` (never fails — falls back to default).
+Returns `0`, or `5` if `args` can't be applied to the text. A missing key never fails.
 
 ---
 
-### `lexis_reload([locale], [fallback_locale])`
+### `lexis_reload([locale], [fallback_locale], [name])`
 
 Reloads translations from the same directory, optionally switching locale. **Restores previous state if the reload fails.**
 
@@ -79,10 +94,10 @@ Reloads translations from the same directory, optionally switching locale. **Res
 lexis_reload                          # reloads current locale
 lexis_reload "en"                     # switches to en.lex and reloads
 lexis_reload "en" "pt"                # switches locale and fallback
-lexis_reload "" "pt"                  # keeps locale, changes fallback
+lexis_reload "" "pt"                  # keeps locale, changes fallback (an omitted locale keeps the current one)
 ```
 
-Returns `0` on success, `1` on failure. On failure, previous translations remain available.
+Returns `0` on success, or the error code (`2` or `4`) on failure. On failure, previous translations remain available.
 
 ---
 
@@ -132,18 +147,18 @@ fi
 
 ### `lexis_info()`
 
-Shows the current runtime state including total keys and cached keys.
+Shows the current runtime state: locale, fallback, directory, entry-file name, file path, total keys and cached keys.
 
 ```bash
 lexis_info
-# → Lexis(locale='en', fallback='en', keys=42, cached_keys=3, filepath='lang/en.lex')
+# → Lexis(locale='en', fallback_locale='en', lang_dir='lang', name='main', filepath='/abs/lang/en.lex', keys=42, cached_keys=3)
 ```
 
 ---
 
 ### `lexis_clear()`
 
-Resets all state — clears translations, locale, and filepath.
+Clears the cache of processed values. The loaded translations and every other piece of state are kept, so the runtime stays usable and the next `lexis_get` processes the escapes again. Use `lexis_reload` to reread the file.
 
 ```bash
 lexis_clear
@@ -156,14 +171,8 @@ lexis_clear
 The Bash runtime does not use exceptions. Instead:
 
 - **Errors print to stderr** with a descriptive message
-- **Functions return `1`** on failure, `0` on success
+- **Functions return a distinct code** on failure and `0` on success (see the table in *Calling conventions*: `2` file not found or invalid input, `3` key not found, `4` parse error, `5` format error)
 - **Callers should check `$?`** after public API calls
-
-| Error Pattern          | When                                               | Exit Code |
-|------------------------|----------------------------------------------------|-----------|
-| `LexFileNotFoundError` | File does not exist or cannot be read              | `1`       |
-| `LexKeyNotFoundError`  | Key does not exist or placeholder formatting fails | `1`       |
-| `LexParseError`        | File contains malformed lines or duplicate keys    | `1`       |
 
 Example:
 
@@ -254,8 +263,9 @@ lexis_load "lang"
 
 ## Requirements
 
-- Bash 4+ (associative arrays required)
-- No external dependencies — POSIX utilities only
+- Bash 4.2+ (associative arrays and `declare -g` are required)
+- `bc` for `%f` (integers, strings and every other specifier work without it)
+- `iconv` is optional: without it, UTF-8 is checked in pure Bash
 
 ---
 

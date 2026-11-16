@@ -1,0 +1,14 @@
+name: Bash runtime
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Make sure bc is installed (needed by %f)
+        run: command -v bc >/dev/null || sudo apt-get install -y bc
+      - run: bash tests/runtimes/bash/test.sh
