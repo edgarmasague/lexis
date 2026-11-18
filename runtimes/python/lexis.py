@@ -66,6 +66,59 @@ _SURROGATES:   range = range(0xD800, 0xE000)
 _FLOAT_CONTEXT: Context = Context(prec=80, rounding=ROUND_HALF_UP)
 
 
+def _format_float(arg: Any, decimals: int, strip_zeros: bool) -> str:
+    # Text for %f, and %s with a float
+    if isinstance(arg, str) and not _PLAIN_DECIMAL.fullmatch(arg):
+        raise ValueError("not a decimal number")
+    number: Decimal = Decimal(
+        float(arg) if isinstance(arg, str) else arg
+    )
+    if not -_FLOAT_LIMIT < number < _FLOAT_LIMIT:
+        raise ValueError("out of range")
+    text: str = format(number.quantize(
+        Decimal(1).scaleb(-decimals), ROUND_HALF_UP,
+        _FLOAT_CONTEXT), "f")
+    if strip_zeros and "." in text:
+        text = text.rstrip("0").rstrip(".")
+    if text.startswith("-") and not text.strip("-0."):
+        text = text[1:]
+    return text
+
+
+def _format_integer(arg: Any, spec: str) -> str:
+    # Text for %d %i %x %o %c, and %s with an integer
+    if isinstance(arg, str) and not _PLAIN_INT.fullmatch(arg):
+        raise ValueError("not an integer")
+    number: Decimal = Decimal(arg)
+    if (not _INT64_MIN <= number <= _INT64_MAX
+            or number != number.to_integral_value()):
+        raise ValueError("not a 64-bit integer")
+    integer: int = int(number)
+    if spec == "c":
+        if (not 1 <= integer <= _MAX_CODE_POINT
+                or integer in _SURROGATES):
+            raise ValueError("invalid code point")
+        return chr(integer)
+    if spec in "xo":
+        return "-" * (integer < 0) + format(abs(integer), spec)
+    return str(integer)
+
+
+def _pad_text(
+        text: str,
+        spec: str,
+        left: bool,
+        zero: bool,
+        width: int
+) -> str:
+    # Pad the text to its width
+    if left:
+        return text.ljust(width)
+    if zero and spec in "dixof":
+        return text.zfill(width)
+    return text.rjust(width)
+
+
 class Lexis:
     """
     Lexis Engine
@@ -328,57 +381,6 @@ class Lexis:
             LexFormatError:
                 If an argument is missing or invalid for its specifier.
         """
-
-        def format_float(arg: Any, decimals: int, strip_zeros: bool) -> str:
-            # Text for %f, and %s with a float
-            if isinstance(arg, str) and not _PLAIN_DECIMAL.fullmatch(arg):
-                raise ValueError("not a decimal number")
-            number: Decimal = Decimal(
-                float(arg) if isinstance(arg, str) else arg
-            )
-            if not -_FLOAT_LIMIT < number < _FLOAT_LIMIT:
-                raise ValueError("out of range")
-            text: str = format(number.quantize(
-                Decimal(1).scaleb(-decimals), ROUND_HALF_UP,
-                _FLOAT_CONTEXT), "f")
-            if strip_zeros and "." in text:
-                text = text.rstrip("0").rstrip(".")
-            if text.startswith("-") and not text.strip("-0."):
-                text = text[1:]
-            return text
-
-        def format_integer(arg: Any, spec: str) -> str:
-            # Text for %d %i %x %o %c, and %s with an integer
-            if isinstance(arg, str) and not _PLAIN_INT.fullmatch(arg):
-                raise ValueError("not an integer")
-            number: Decimal = Decimal(arg)
-            if (not _INT64_MIN <= number <= _INT64_MAX
-                    or number != number.to_integral_value()):
-                raise ValueError("not a 64-bit integer")
-            integer: int = int(number)
-            if spec == "c":
-                if (not 1 <= integer <= _MAX_CODE_POINT
-                        or integer in _SURROGATES):
-                    raise ValueError("invalid code point")
-                return chr(integer)
-            if spec in "xo":
-                return "-" * (integer < 0) + format(abs(integer), spec)
-            return str(integer)
-
-        def pad_text(
-                text: str,
-                spec: str,
-                left: bool,
-                zero: bool,
-                width: int
-        ) -> str:
-            # Pad the text to its width
-            if left:
-                return text.ljust(width)
-            if zero and spec in "dixof":
-                return text.zfill(width)
-            return text.rjust(width)
-
         out: list[str] = []
         cursor:    int = 0
         used:      int = 0
@@ -397,7 +399,6 @@ class Lexis:
             if placeholder is None or placeholder["pct"]:
                 out.append("%")  # "%%", or a "%" that starts nothing valid
                 continue
-            # Out of limits: stays literal and uses no argument
             spec: str = placeholder["spec"]
             has_precision: bool = placeholder["prec"] is not None
             width_digits: str = (placeholder["width"] or "").lstrip("0")
@@ -409,6 +410,7 @@ class Lexis:
                 or len(precision_digits) > _PRECISION_DIGITS
                 or int(precision_digits or 0) > _MAX_PRECISION
             )
+            # Out of limits: stays literal and uses no argument
             if too_wide or bad_precision:
                 out.append(placeholder.group())  # literal, uses no argument
                 continue
@@ -433,17 +435,16 @@ class Lexis:
                     arg.encode("utf-8")  # raises if it is not valid UTF-8
                     text = arg
                 elif spec == "f" or (spec == "s" and isinstance(arg, float)):
-                    text = format_float(arg, decimals, not has_precision)
+                    text = _format_float(arg, decimals, not has_precision)
                 else:  # %d %i %x %o %c, and %s with an integer
-                    text = format_integer(arg, spec)
+                    text = _format_integer(arg, spec)
             except (TypeError, ValueError, ArithmeticError) as error:
                 raise LexFormatError(
                     f"Invalid argument {arg!r} for '%{spec}'"
                 ) from error
-
             # Width. len() counts code points. "-" wins over "0", and "0" only
             # applies to numbers
-            out.append(pad_text(
+            out.append(_pad_text(
                 text, spec, bool(placeholder["left"]),
                 bool(placeholder["zero"]), width
             ))

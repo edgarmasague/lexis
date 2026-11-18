@@ -71,8 +71,6 @@ lexis_get "app_name"                  # → "Lexis"
 
 Returns `3` if the key doesn't exist and `5` if a placeholder can't be formatted. Errors are printed to stderr.
 
----
-
 ### `lexis_get_or_default(key, default, [args...])`
 
 Returns the translation or a default value if the key is not found. Applies `args` to the default if the translation is missing.
@@ -83,8 +81,6 @@ lexis_get_or_default "missing" "Hello %s" "Bob"   # → "Hello Bob"
 ```
 
 Returns `0`, or `5` if `args` can't be applied to the text. A missing key never fails.
-
----
 
 ### `lexis_reload([locale], [fallback_locale], [name])`
 
@@ -98,8 +94,6 @@ lexis_reload "" "pt"                  # keeps locale, changes fallback (an omitt
 ```
 
 Returns `0` on success, or the error code (`2` or `4`) on failure. On failure, previous translations remain available.
-
----
 
 ### `lexis_keys()`
 
@@ -121,8 +115,6 @@ while read -r key; do
 done < <(lexis_keys)
 ```
 
----
-
 ### `lexis_len()`
 
 Returns the total number of loaded keys.
@@ -130,8 +122,6 @@ Returns the total number of loaded keys.
 ```bash
 lexis_len   # → 42
 ```
-
----
 
 ### `lexis_has(key)`
 
@@ -143,8 +133,6 @@ if lexis_has "welcome"; then
 fi
 ```
 
----
-
 ### `lexis_info()`
 
 Shows the current runtime state: locale, fallback, directory, entry-file name, file path, total keys and cached keys.
@@ -154,8 +142,6 @@ lexis_info
 # → Lexis(locale='en', fallback_locale='en', lang_dir='lang', name='main', filepath='/abs/lang/en.lex', keys=42, cached_keys=3)
 ```
 
----
-
 ### `lexis_clear()`
 
 Clears the cache of processed values. The loaded translations and every other piece of state are kept, so the runtime stays usable and the next `lexis_get` processes the escapes again. Use `lexis_reload` to reread the file.
@@ -163,8 +149,6 @@ Clears the cache of processed values. The loaded translations and every other pi
 ```bash
 lexis_clear
 ```
-
----
 
 ## Error Handling
 
@@ -181,8 +165,6 @@ if ! lexis_get "welcome" "Alice"; then
     echo "Failed to get translation"
 fi
 ```
-
----
 
 ## Locale Detection and Fallback
 
@@ -202,8 +184,6 @@ lexis_load "lang" "" "pt"
 # Force explicit locale
 lexis_load "lang" "en"
 ```
-
----
 
 ## Full Example
 
@@ -247,8 +227,6 @@ lexis_get "welcome" "Alice" 3
 lexis_clear
 ```
 
----
-
 ## Debug Mode
 
 Set `LEXIS_DEBUG=1` to enable debug output:
@@ -259,14 +237,10 @@ lexis_load "lang"
 # → [lexis:debug] Loaded 'lang/en.lex' - 42 keys
 ```
 
----
-
 ## Requirements
 
 - Bash 4.2+ (associative arrays and `declare -g` are required)
 - `bc` for `%f` (integers, strings and every other specifier work without it)
 - `iconv` is optional: without it, UTF-8 is checked in pure Bash
-
----
 
 *Lexis — Lex una, linguae multae.*
