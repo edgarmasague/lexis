@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "lexis"
+version = "1.0.0"
+description = "Lightweight internationalization library"
+packages = [
+    { include = "lexis.py" },
+    { include = "__init__.py" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

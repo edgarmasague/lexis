@@ -1,10 +1,13 @@
 # Lexis · Python Runtime
 
 Full API documentation for the Python runtime.
-
 ## Installation
 
-Copy `runtimes/python/lexis.py` into your project and import it:
+Lexis has **no external dependencies** and requires **Python 3.10+**. Choose the installation method that best fits your project.
+
+### Option 1: Direct File Copy (Zero Setup)
+
+Copy `lexis.py` and `__init__.py` from `runtimes/python/` directly into your project directory and import them:
 
 ```python
 from lexis import (
@@ -14,9 +17,41 @@ from lexis import (
     LexParseError,
     LexFormatError
 )
+
+# Initialize Lexis pointing to your translations directory
+i18n = Lexis("./lang", locale="es")
 ```
 
-No external dependencies. Requires Python 3.10+.
+### Option 2: Poetry (From GitHub)
+
+Add Lexis directly from GitHub using Poetry:
+
+```bash
+poetry add "git+https://github.com/edgarmasague/lexis.git#subdirectory=runtimes/python"
+```
+
+Or add it manually to your `pyproject.toml` dependencies:
+
+```toml
+[tool.poetry.dependencies]
+python = "^3.10"
+lexis = { git = "https://github.com/edgarmasague/lexis.git", branch = "main", subdirectory = "runtimes/python" }
+```
+
+### Option 3: Pip / requirements.txt
+
+If you use a traditional `requirements.txt` file, add the following line:
+
+```text
+git+https://github.com/edgarmasague/lexis.git@main#subdirectory=runtimes/python
+```
+
+Then install the dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
 
 ## Loading Strategy
 
