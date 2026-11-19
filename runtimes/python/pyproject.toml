@@ -1,15 +1,31 @@
-[tool.poetry]
-name = "lexis"
+[project]
+name = "lexis-i18n"
 version = "1.0.0"
-description = "Lightweight internationalization library"
-packages = [
-    { include = "lexis.py" },
-    { include = "__init__.py" }
+description = "Lightweight, dependency-free internationalization library"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Edgar Masagué" }
+]
+keywords = [
+    "i18n",
+    "internationalization",
+    "localization",
+    "translations"
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Internationalization",
+    "Topic :: Software Development :: Localization",
+    "Operating System :: OS Independent"
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
+[tool.poetry]
+packages = [
+    { include = "lexis.py" }
+]
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

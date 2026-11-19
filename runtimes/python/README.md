@@ -3,55 +3,79 @@
 Full API documentation for the Python runtime.
 ## Installation
 
-Lexis has **no external dependencies** and requires **Python 3.10+**. Choose the installation method that best fits your project.
+Lexis has **no external dependencies** and requires **Python 3.10+**.
 
-### Option 1: Direct File Copy (Zero Setup)
+Choose the installation method that best fits your project.
 
-Copy `lexis.py` and `__init__.py` from `runtimes/python/` directly into your project directory and import them:
+### Option 1: pip (PyPI)
 
-```python
-from lexis import (
-    Lexis,
-    LexFileNotFoundError,
-    LexKeyNotFoundError,
-    LexParseError,
-    LexFormatError
-)
+Install Lexis from PyPI:
 
-# Initialize Lexis pointing to your translations directory
-i18n = Lexis("./lang", locale="es")
+```bash
+pip install lexis-i18n
 ```
 
-### Option 2: Poetry (From GitHub)
+Or add it to your `requirements.txt`:
 
-Add Lexis directly from GitHub using Poetry:
+```text
+lexis-i18n>=1.0.0
+```
+
+### Option 2: pip (From GitHub)
+
+Install directly from the official repository:
+
+```bash
+pip install "git+https://github.com/edgarmasague/lexis.git#subdirectory=runtimes/python"
+```
+
+Or add it to your `requirements.txt`:
+
+```text
+git+https://github.com/edgarmasague/lexis.git#subdirectory=runtimes/python
+```
+
+### Option 3: Poetry (PyPI)
+
+Install Lexis using Poetry:
+
+```bash
+poetry add lexis-i18n
+```
+
+Or add it manually to your `pyproject.toml`:
+
+```toml
+[tool.poetry.dependencies]
+python = "^3.10"
+lexis-i18n = "^1.0.0"
+```
+
+### Option 4: Poetry (From GitHub)
+
+Install directly from GitHub:
 
 ```bash
 poetry add "git+https://github.com/edgarmasague/lexis.git#subdirectory=runtimes/python"
 ```
 
-Or add it manually to your `pyproject.toml` dependencies:
+Or add it manually to your `pyproject.toml`:
 
 ```toml
 [tool.poetry.dependencies]
 python = "^3.10"
-lexis = { git = "https://github.com/edgarmasague/lexis.git", branch = "main", subdirectory = "runtimes/python" }
+lexis-i18n = {
+    git = "https://github.com/edgarmasague/lexis.git",
+    branch = "main",
+    subdirectory = "runtimes/python"
+}
 ```
 
-### Option 3: Pip / requirements.txt
+### Option 5: Direct File Copy (Zero Setup)
 
-If you use a traditional `requirements.txt` file, add the following line:
+Copy `lexis.py` from `runtimes/python/` directly into your project directory.
 
-```text
-git+https://github.com/edgarmasague/lexis.git@main#subdirectory=runtimes/python
-```
-
-Then install the dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
+No package manager or installation step is required.
 
 ## Loading Strategy
 

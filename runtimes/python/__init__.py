@@ -1,7 +1,7 @@
 """
 Lexis - Lightweight Internationalization Library
 """
-from lexis import (
+from .lexis import (
     Lexis,
     LexFileNotFoundError,
     LexFormatError,
