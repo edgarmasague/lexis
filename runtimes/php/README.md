@@ -2,8 +2,6 @@
 
 Full API documentation for the PHP runtime.
 
----
-
 ## Installation
 
 Copy `runtimes/php/lexis.php` into your project and import it:
@@ -12,9 +10,7 @@ Copy `runtimes/php/lexis.php` into your project and import it:
 require_once 'lexis.php';
 ```
 
-No external dependencies. Requires PHP 8.0+.
-
----
+No external dependencies and no extensions beyond the PHP core. Requires PHP 8.0+.
 
 ## Loading Strategy
 
@@ -25,23 +21,29 @@ The PHP runtime uses an **eager + lazy** model:
 | **Eager** | On `new Lexis()`, `load()`, or `reload()` | Reads and validates the entire file — detects duplicates and malformed lines immediately |
 | **Lazy**  | On first `get()` for a key                | Processes escape sequences and stores the result in cache                                |
 
----
-
 ## API
 
-### `new Lexis(langDir, locale:null, fallbackLocale:"en")`
+### `new Lexis(langDir, locale:null, fallbackLocale:"en", name:"main")`
 
 Initializes the runtime. Auto-detects locale from `$LANG`. Falls back to the default locale file if the requested one does not exist.
+
+For a locale such as `es_VE`, the files are looked up in this order, and then the same steps are applied to the fallback locale:
+
+1. `lang/es_VE.lex`
+2. `lang/es_VE/{name}.lex`
+3. `lang/es.lex`
+4. `lang/es/{name}.lex`
+
+Locales must be `language` or `language_REGION` (`es-ve` is normalized to `es_VE`) and `name` only letters, digits, `_` and `-`; anything else raises `LexFileNotFoundError` before the filesystem is touched. Only `null` auto-detects: an empty string is invalid. The current locale becomes the code of the file actually found (`$lex->getLocale()`).
 
 ```php
 $lex = new Lexis("lang");                               // detects $LANG automatically
 $lex = new Lexis("lang", "fr");                         // forces locale (falls back if not found)
 $lex = new Lexis("lang", "fr", fallbackLocale:"pt");    // custom fallback
+$lex = new Lexis("lang", name:"app");                   // custom entry-file name
 ```
 
----
-
-### `$lex->load(langDir, locale:null, fallbackLocale:"en")`
+### `$lex->load(langDir, locale:null, fallbackLocale:"en", name:"main")`
 
 Loads a `.lex` file from a new directory, optionally with a new locale.  
 Useful when embedding Lexis in projects with multiple translation directories.
@@ -51,13 +53,13 @@ $lex->load("other/lang", "fr");
 $lex->load("other/lang", "fr", fallbackLocale:"pt");
 ```
 
----
-
 ### `$lex->get(key, ...args)`
 
 Returns the translation with `printf`-style substitution.  
 Processes escape sequences on first access and caches the result.
-Raises `LexKeyNotFoundError` if the key doesn't exist or if placeholder formatting fails (e.g., wrong number or type of arguments)
+Raises `LexKeyNotFoundError` if the key doesn't exist and `LexFormatError` if a placeholder can't be formatted (a missing argument, or an argument that is invalid for its specifier).
+
+The formatting is Lexis' own implementation, never PHP's `printf`, so the output is identical in every runtime. PHP types matter: `%d`, `%i`, `%x`, `%o` and `%c` take an `int`, an integral `float` or a plain integer string; `%f` takes an `int`, a `float` or a plain decimal string; `%s` takes a string, an `int` or a `float`. `bool`, `null` and arrays are never valid.
 
 ```php
 $lex->get("welcome", "Alice", 3);      // → "Welcome Alice to Lexis!"
@@ -66,47 +68,66 @@ $lex->get("progress", 42);             // → "Progress: 42% completed"
 $lex->get("app_name");                 // → "Lexis"
 ```
 
----
-
 ### `$lex->getOrDefault(key, default, ...args)`
 
 Returns the translation or a default value if the key is not found.  
-Applies `args` to the default if the translation is missing.
+Applies `args` to the default if the translation is missing (raising `LexFormatError` like `get()` if they can't be applied).
 
 ```php
 $lex->getOrDefault("missing", "N/A");              // → "N/A"
 $lex->getOrDefault("missing", "Hello %s", "Bob");  // → "Hello Bob"
 ```
 
----
-
-### `$lex->reload(locale:null, fallbackLocale:null)`
+### `$lex->reload(locale:null, fallbackLocale:null, name:null)`
 
 Reloads translations from the same directory, optionally switching locale.  
 **Restores previous state if the reload fails.**
 
 ```php
-$lex->reload();                     // reloads current locale
+$lex->reload();                     // reloads current locale (an omitted locale keeps the current one)
 $lex->reload("en");                 // switches to en.lex and reloads
 $lex->reload("en", "pt");           // switches locale and fallback
 $lex->reload(fallbackLocale:"pt");  // keeps locale, changes fallback
+$lex->reload(name:"app");           // changes the entry-file name
 ```
-
----
 
 ### `$lex->keys()`
 
-Returns all loaded translation keys as an array.
+Returns all loaded translation keys as an array of strings (a snapshot).
 
 ```php
-$lex->keys();   // → ('welcome', 'error_file', 'progress', ...)
+$lex->keys();   // → ['welcome', 'error_file', 'progress', ...]
 ```
 
----
+### `$lex->has(key)`
+
+Returns whether the key exists, without loading or formatting its value. Never raises.
+
+```php
+$lex->has("welcome");   // → true
+```
+
+### `$lex->len()`
+
+Returns the number of loaded keys (the same as `count($lex)`).
+
+### `$lex->info()`
+
+Returns a snapshot of the runtime state as an array.
+
+```php
+$lex->info();
+// → ['locale' => 'en', 'fallback_locale' => 'en', 'lang_dir' => 'lang', 'name' => 'main',
+//    'filepath' => '/abs/lang/en.lex', 'keys' => 42, 'cached_keys' => 3]
+```
+
+### `$lex->clear()`
+
+Clears the cache of processed values. The loaded translations and every other piece of state are kept, so the runtime stays usable and the next `get()` processes the escapes again. Use `reload()` to reread the file.
 
 ### `isset($lex["key"])`
 
-Checks if a key exists, via the `ArrayAccess` interface - winthout loading or formatting its value.
+Checks if a key exists, via the `ArrayAccess` interface - without loading or formatting its value.
 
 ```php
 isset($lex["welcome"]);    // → true
@@ -116,12 +137,10 @@ isset($lex["missing"]);    // → false
 `$lex["key"]` is also a read shorthand for `$lex->get("key");`
 
 ```php
-$lex->get("welcome");    // → same as $lex->get("welcome")
+$lex["welcome"];    // → same as $lex->get("welcome")
 ```
 
 Lexis translations are read-only: `$lex["key"] = "value"` and `unset($lex["key"])` both throw a `LogicException`.
-
----
 
 ### `count($lex)`
 
@@ -131,8 +150,6 @@ Returns the total number of loaded keys, via the `Countable` interface.
 count($lex);   // → 42
 ```
 
----
-
 ### `$lex->getLocale()`
 
 Returns the currently active locale code.
@@ -141,36 +158,31 @@ Returns the currently active locale code.
 $lex->getLocale();   // → "en"
 ```
 
----
-
-### `$lex->getfilepath()`
+### `$lex->getFilepath()`
 
 Returns the path to the currently loaded `.lex` file.
 
 ```php
-$lex->getfilepath();   // → "lang/en.lex"
+$lex->getFilepath();   // → "/abs/lang/en.lex"
 ```
-
----
 
 ### `(string) $lex`
 
-Shows the current runtime state including total keys and cached keys.
+Shows the current runtime state: locale, fallback, directory, entry-file name, file path, total keys and cached keys.
 
 ```php
 (string) $lex;
-// Lexis(locale='en', fallback='en', keys=42, cached_keys=3, filepath='lang/en.lex')
+// Lexis(locale='en', fallback_locale='en', lang_dir='lang', name='main', filepath='/abs/lang/en.lex', keys=42, cached_keys=3)
 ```
-
----
 
 ## Exceptions
 
-| Exception              | When raised                                            |
-|------------------------|--------------------------------------------------------|
-| `LexFileNotFoundError` | The `.lex` file does not exist or cannot be read       |
-| `LexKeyNotFoundError`  | The key does not exist or placeholder formatting fails |
-| `LexParseError`        | The file contains malformed lines or duplicate keys    |
+| Exception              | When raised                                                          |
+|------------------------|----------------------------------------------------------------------|
+| `LexFileNotFoundError` | No `.lex` file for the locale or fallback, or an invalid input       |
+| `LexKeyNotFoundError`  | The key does not exist                                               |
+| `LexParseError`        | Malformed line, duplicate key or invalid UTF-8                       |
+| `LexFormatError`       | A missing argument, or an argument that is invalid for its specifier |
 
 ```php
 try {
@@ -182,10 +194,10 @@ try {
     echo "[ERROR] {$error->getMessage()}\n";
 } catch(LexParseError $error) {
     echo "[ERROR] {$error->getMessage()}\n";
+} catch(LexFormatError $error) {
+    echo "[ERROR] {$error->getMessage()}\n";
 }
 ```
-
----
 
 ## Locale Detection and Fallback
 
@@ -205,8 +217,6 @@ $lex = new Lexis("lang", fallbackLocale:"pt");
 // Force explicit locale
 $lex = new Lexis("lang", "en");
 ```
-
----
 
 ## Full Example
 
@@ -234,16 +244,14 @@ try {
     echo "[ERROR] {$error->getMessage()}\n";
 } catch(LexParseError $error) {
     echo "[ERROR] {$error->getMessage()}\n";
+} catch(LexFormatError $error) {
+    echo "[ERROR] {$error->getMessage()}\n";
 }
 ```
-
----
 
 ## Requirements
 
 - PHP 8.0+
-- No external dependencies — stdlib only
-
----
+- No external dependencies and no extensions beyond the PHP core (PCRE is always present)
 
 *Lexis — Lex una, linguae multae.*
