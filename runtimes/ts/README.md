@@ -17,13 +17,13 @@ npx tsc
 Then import the compiled output:
 
 ```typescript
-import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError } from "./lexis.js";
+import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError, LexFormatError } from "./lexis.js";
 ```
 
 **Option B - Run the `.ts` source directly with `tsx` (no compile step, good for scripts/dev):**
 
 ```typescript
-import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError } from "./lexis.ts";
+import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError, LexFormatError } from "./lexis.ts";
 ```
 
 ```bash
@@ -48,19 +48,29 @@ The TypeScript runtime uses an **eager + lazy** model:
 
 ## API
 
-### `new Lexis(langDir, locale = null, fallbackLocale = "en")`
+### `new Lexis(langDir, locale = null, fallbackLocale = "en", name = "main")`
 
 Initializes the runtime. Auto-detects locale from `$LANG`. Falls back to the default locale file if the requested one does not exist.
+
+For a locale such as `es_VE`, the files are looked up in this order, and then the same steps are applied to the fallback locale:
+
+1. `lang/es_VE.lex`
+2. `lang/es_VE/{name}.lex`
+3. `lang/es.lex`
+4. `lang/es/{name}.lex`
+
+Locales must be `language` or `language_REGION` (`es-ve` is normalized to `es_VE`) and `name` only letters, digits, `_` and `-`; anything else throws `LexFileNotFoundError` before the filesystem is touched. Only `null` auto-detects: an empty string is invalid. The current locale becomes the code of the file actually found (`lex.getLocale()`).
 
 ```typescript
 const lex = new Lexis("lang");                               // detects $LANG automatically
 const lex = new Lexis("lang", "fr");                         // forces locale (falls back if not found)
 const lex = new Lexis("lang", "fr", "pt");                   // custom fallback
+const lex = new Lexis("lang", null, "en", "app");            // custom entry-file name
 ```
 
 ---
 
-### `lex.load(langDir, locale = null, fallbackLocale = "en")`
+### `lex.load(langDir, locale = null, fallbackLocale = "en", name = "main")`
 
 Loads a `.lex` file from a new directory, optionally with a new locale.  
 Useful when embedding Lexis in projects with multiple translation directories.
@@ -76,7 +86,9 @@ lex.load("other/lang", "fr", "pt");
 
 Returns the translation with `printf`-style substitution.  
 Processes escape sequences on first access and caches the result.
-Raises `LexKeyNotFoundError` if the key doesn't exist or if placeholder formatting fails (e.g., wrong number or type of arguments)
+Throws `LexKeyNotFoundError` if the key doesn't exist and `LexFormatError` if a placeholder can't be formatted (a missing argument, or an argument that is invalid for its specifier).
+
+The formatting is Lexis' own implementation, never the host's, so the output is identical in every runtime. JavaScript types matter: `%d`, `%i`, `%x`, `%o` and `%c` take an integral `number`, a `bigint` or a plain integer string; `%f` takes a `number`, a `bigint` or a plain decimal string; `%s` takes a string, a `number` or a `bigint`. Use a `bigint` (`9223372036854775807n`) for integers above 2^53, because a `number` can't hold them exactly. `boolean`, `null` and `undefined` are never valid.
 
 ```typescript
 lex.get("welcome", "Alice", 3);      // → "Welcome Alice to Lexis!"
@@ -90,7 +102,7 @@ lex.get("app_name");                 // → "Lexis"
 ### `lex.getOrDefault(key, defaultValue, ...args)`
 
 Returns the translation or a default value if the key is not found.  
-Applies `args` to the default if the translation is missing.
+Applies `args` to the default if the translation is missing (throwing `LexFormatError` like `get()` if they can't be applied).
 
 ```typescript
 lex.getOrDefault("missing", "N/A");              // → "N/A"
@@ -99,33 +111,34 @@ lex.getOrDefault("missing", "Hello %s", "Bob");  // → "Hello Bob"
 
 ---
 
-### `lex.reload(locale = null, fallbackLocale = null)`
+### `lex.reload(locale = null, fallbackLocale = null, name = null)`
 
 Reloads translations from the same directory, optionally switching locale.  
 **Restores previous state if the reload fails.**
 
 ```typescript
-lex.reload();                     // reloads current locale
+lex.reload();                     // reloads current locale (an omitted locale keeps the current one)
 lex.reload("en");                 // switches to en.lex and reloads
 lex.reload("en", "pt");           // switches locale and fallback
 lex.reload(null, "pt");           // keeps locale, changes fallback
+lex.reload(null, null, "app");     // changes the entry-file name
 ```
 
 ---
 
 ### `lex.keys()`
 
-Returns all loaded translation keys as an array.
+Returns all loaded translation keys as an array (a snapshot).
 
 ```typescript
-lex.keys();   // → ('welcome', 'error_file', 'progress', ...)
+lex.keys();   // → ['welcome', 'error_file', 'progress', ...]
 ```
 
 ---
 
 ### `lex.has(key)`
 
-Checks if a key exists.
+Checks if a key exists, without loading or formatting its value.
 
 ```typescript
 lex.has("welcome");    // → true
@@ -134,13 +147,31 @@ lex.has("missing");    // → false
 
 ---
 
-### `lex.size()`
+### `lex.len()`
 
-Returns the total number of loaded keys.
+Returns the total number of loaded keys. `lex.size()` is an alias.
 
 ```typescript
-lex.size();   // → 42
+lex.len();   // → 42
 ```
+
+---
+
+### `lex.info()`
+
+Returns a snapshot of the runtime state.
+
+```typescript
+lex.info();
+// → { locale: "en", fallbackLocale: "en", langDir: "lang", name: "main",
+//     filepath: "/abs/lang/en.lex", keys: 42, cachedKeys: 3 }
+```
+
+---
+
+### `lex.clear()`
+
+Clears the cache of processed values. The loaded translations and every other piece of state are kept, so the runtime stays usable and the next `get()` processes the escapes again. Use `reload()` to reread the file.
 
 ---
 
@@ -159,18 +190,18 @@ lex.getLocale();   // → "en"
 Returns the path to the currently loaded `.lex` file.
 
 ```typescript
-lex.getFilepath();   // → "lang/en.lex"
+lex.getFilepath();   // → "/abs/lang/en.lex"
 ```
 
 ---
 
 ### `lex.toString()`
 
-Shows the current runtime state including total keys and cached_keys.
+Shows the current runtime state: locale, fallback, directory, entry-file name, file path, total keys and cached keys.
 
 ```typescript
 lex.toString();
-// Lexis(locale=en, fallback=en, keys=42, cached_keys=3, filepath=lang/en.lex)
+// Lexis(locale='en', fallback_locale='en', lang_dir='lang', name='main', filepath='/abs/lang/en.lex', keys=42, cached_keys=3)
 ```
 
 ---
@@ -179,9 +210,10 @@ lex.toString();
 
 | Exception              | When raised                                            |
 |------------------------|--------------------------------------------------------|
-| `LexFileNotFoundError` | The `.lex` file does not exist or cannot be read       |
-| `LexKeyNotFoundError`  | The key does not exist or placeholder formatting fails |
-| `LexParseError`        | The file contains malformed lines or duplicate keys    |
+| `LexFileNotFoundError` | No `.lex` file for the locale or fallback, or an invalid input |
+| `LexKeyNotFoundError`  | The key does not exist                                 |
+| `LexParseError`        | Malformed line, duplicate key or invalid UTF-8         |
+| `LexFormatError`       | A missing argument, or an argument that is invalid for its specifier |
 
 ```typescript
 try {
@@ -193,6 +225,8 @@ try {
     } else if(error instanceof LexKeyNotFoundError) {
         console.error(`[ERROR] ${error.message}`)
     } else if(error instanceof LexParseError) {
+        console.error(`[ERROR] ${error.message}`)
+    } else if(error instanceof LexFormatError) {
         console.error(`[ERROR] ${error.message}`)
     }
 }
@@ -224,7 +258,7 @@ const lex = new Lexis("lang", "en");
 ## Full Example
 
 ```typescript
-import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError } from "./lexis.js";
+import { Lexis, LexFileNotFoundError, LexKeyNotFoundError, LexParseError, LexFormatError } from "./lexis.js";
 
 try {
     const lex = new Lexis("lang");
@@ -237,7 +271,7 @@ try {
 
     console.log(lex.getOrDefault("missing", "N/A"));   // → N/A
     console.log(lex.has("welcome"));                   // → true
-    console.log(lex.size());                           // → 42
+    console.log(lex.len());                            // → 42
 
     lex.reload("es");
     console.log(lex.get("welcome", "Alice", 3));      // → Bienvenida Alice a Lexis!
@@ -247,6 +281,8 @@ try {
     } else if(error instanceof LexKeyNotFoundError) {
         console.error(`[ERROR] ${error.message}`)
     } else if(error instanceof LexParseError) {
+        console.error(`[ERROR] ${error.message}`)
+    } else if(error instanceof LexFormatError) {
         console.error(`[ERROR] ${error.message}`)
     }
 }

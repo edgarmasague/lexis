@@ -1,0 +1,21 @@
+name: TypeScript runtime
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install tools (not committed to the repo)
+        run: npm install --no-save --no-package-lock typescript @types/node tsx
+      - run: npx tsc -p runtimes/ts/tsconfig.json --noEmit
+      - run: npx tsx tests/runtimes/ts/test.ts
